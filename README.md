@@ -22,7 +22,7 @@ Follow instructions [at this link](https://docs.nerf.studio/en/latest/quickstart
 Follow the instructions [at this link](https://docs.nerf.studio/en/latest/developer_guides/viewer/viewer_overview.html#installing-and-running-locally) to build the viewer locally. **Make sure you are on the branch `lerf-merge`**, since this has extra code for a textbox in the viewer.
 
 ### 3. Install the `lerf` package
-Navigate to this folder and run `python -m pip install -e`. This installs entrypoints for Nerfstudio to use
+Navigate to this folder and run `python -m pip install -e .` This installs entrypoints for Nerfstudio to use
 
 ### 4. Run `ns-install-cli`
 This will update the Nerfstudio `ns-train` command to register the LERF method.
