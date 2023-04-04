@@ -1,7 +1,7 @@
 # LERF: Language Embedded Radiance Fields
 This is the official implementation for [LERF](https://lerf.io).
 
-**NOTE**: LERF is fully usable, however complete integration with Nerfstudio is not *fully* complete. Remaining TODOs:
+**NOTE**: LERF is fully usable, however complete integration with Nerfstudio is not *fully* complete, as it requires a temporary separate branch `lerf-merge` in the Nerfstudio repo. In the coming few weeks this will be removed when code is refactored to more seamlessly support LERF. Remaining TODOs:
 - [ ] Refactor Nerfstudio viewer to allow adding javascript components from within model files (this will remove the need for hard-coding a textbox into the viewer)
 - [ ] Integrate into `ns-render` commands to render videos from the command line with custom prompts
 
