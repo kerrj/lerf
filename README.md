@@ -62,4 +62,6 @@ If your GPU is struggling on memory, we provide a `lerf-lite` implementation tha
 `lerf-big` provides a larger model that uses ViT-L/14 instead of ViT-B/16 for those with large memory GPUs.
 
 # Extending LERF
-TODO
+Be mindful that code for visualization will change as more features are integrated into Nerfstudio, so if you fork this repo and build off of it, check back regularly for extra changes.
+
+Please open Github issues for any installation/usage problems you run into, especially GPU related issues. We've tried to support as broad a range of GPUs as possible with `lerf-lite`, but it might be necessary to provide even more low-footprint versions. Thank you!
