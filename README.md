@@ -33,9 +33,9 @@ Run `ns-train -h`: you should see a list of "subcommands" with lerf, lerf-big, a
 # Using LERF
 Now that LERF is installed you can play with it! 
 
-- Launch training with `ns-train lerf --data <data_folder> --viewer.websocket-port <viewer_port>`. This specifies a data folder to use, as well as a port to connect to the viewer. For more details, see [Nerfstudio documentation](https://docs.nerf.studio/en/latest/quickstart/first_nerf.html)
+- Launch training with `ns-train lerf --data <data_folder>`. This specifies a data folder to use. For more details, see [Nerfstudio documentation](https://docs.nerf.studio/en/latest/quickstart/first_nerf.html). 
 - Launch the viewer by navigating to `nerfstudio/nerfstudio/viewer/app` and executing `yarn start`. This will provide a port number <server_port> (typically 4000).
-- Connect to the viewer by forwarding the viewer port (we use VSCode to do this), and connect to `http://localhost:<server_port>/?websocket_url=ws://localhost:<viewer_port>` in your browser.
+- Connect to the viewer by forwarding the viewer port (we use VSCode to do this), and connect to `http://localhost:<server_port>/?websocket_url=ws://localhost:<viewer_port>` in your browser. The viewer port is provided in the `ns-train` output in a green box at the bottom.
 - Within the viewer, you can type text into the textbox, then select the `relevancy_0` output type to visualize relevancy maps.
 
 ## Relevancy Map Normalization
