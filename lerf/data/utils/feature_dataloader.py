@@ -1,11 +1,12 @@
+import json
 import os
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from pathlib import Path
-import json
 
 import numpy as np
 import torch
+
 
 class FeatureDataloader(ABC):
     def __init__(
@@ -38,7 +39,7 @@ class FeatureDataloader(ABC):
             cfg = json.loads(f.read())
         if cfg != self.cfg:
             raise ValueError("Config mismatch")
-        self.data = torch.from_numpy(np.load(self.cache_path))
+        self.data = torch.from_numpy(np.load(self.cache_path)).to(self.device)
 
     def save(self):
         cache_info_path = self.cache_path.with_suffix(".info")

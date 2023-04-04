@@ -38,8 +38,8 @@ class PatchEmbeddingDataloader(FeatureDataloader):
                 np.floor((cfg["image_shape"][1] + 2 * self.padding - (self.kernel_size - 1) - 1) / self.stride + 1)
             )
         )
-        self.center_x = torch.from_numpy(self.center_x).to(device)
-        self.center_y = torch.from_numpy(self.center_y).to(device)
+        self.center_x = torch.from_numpy(self.center_x).to(device).half()
+        self.center_y = torch.from_numpy(self.center_y).to(device).half()
 
         self.model = model
         self.embed_size = self.model.embedding_dim
@@ -60,7 +60,7 @@ class PatchEmbeddingDataloader(FeatureDataloader):
             img_embeds.append(self._embed_clip_tiles(img.unsqueeze(0), unfold_func))
         self.data = torch.from_numpy(np.stack(img_embeds)).half()
 
-    def __call__(self, img_points, mode="interp"):
+    def __call__(self, img_points):
         # img_points: (B, 3) # (img_ind, x, y) (img_ind, row, col)
         # return: (B, 512)
         img_points = img_points.to(self.device)
@@ -78,11 +78,11 @@ class PatchEmbeddingDataloader(FeatureDataloader):
 
         x_stride = self.stride
         y_stride = self.stride
-        right_w = ((img_points_x - (self.center_x[x_ind])) / x_stride).half()
+        right_w = (img_points_x - (self.center_x[x_ind])) / x_stride  # .half()
         top = torch.lerp(topleft, topright, right_w[:, None])
         bot = torch.lerp(botleft, botright, right_w[:, None])
 
-        bot_w = ((img_points_y - (self.center_y[y_ind])) / y_stride).half()
+        bot_w = (img_points_y - (self.center_y[y_ind])) / y_stride  # .half()
         return torch.lerp(top, bot, bot_w[:, None])
 
     def _embed_clip_tiles(self, image, unfold_func):
@@ -99,27 +99,3 @@ class PatchEmbeddingDataloader(FeatureDataloader):
         clip_embeds = torch.concat((clip_embeds, clip_embeds[:, [-1], :]), dim=1)
         clip_embeds = torch.concat((clip_embeds, clip_embeds[[-1], :, :]), dim=0)
         return clip_embeds.detach().cpu().numpy()
-
-    # def upsample_interp(self, input_ids, N_samp):
-    #     B = input_ids.shape[0]
-    #     if B == 0:
-    #         return None
-    #     img_ind, img_points_x, img_points_y = input_ids[:, 0], input_ids[:, 1], input_ids[:, 2]
-
-    #     x_ind = torch.searchsorted(self.center_x, img_points_x, side="left") - 1
-    #     y_ind = torch.searchsorted(self.center_y, img_points_y, side="left") - 1
-    #     gt_embeds = self.interp_inds(img_ind, x_ind, y_ind, img_points_x, img_points_y)
-
-    #     blur_size = 0.5 * self.kernel_size
-
-    #     x_start = img_points_x - blur_size / 2  # (N_patch, 1)
-    #     x_start = x_start[:, None].repeat_interleave(N_samp, 0)  # (N_patcH*N_samp,1)
-    #     y_start = img_points_y - blur_size / 2
-    #     y_start = y_start[:, None].repeat_interleave(N_samp, 0)
-
-    #     new_xs = torch.rand((N_samp * B, 1), device=self.device) * blur_size + x_start
-    #     new_ys = torch.rand((N_samp * B, 1), device=self.device) * blur_size + y_start
-    #     new_xs = torch.clip(new_xs, 0, self.imlist_shape[2] - 1)
-    #     new_ys = torch.clip(new_ys, 0, self.imlist_shape[3] - 1)
-    #     new_imids = img_ind[:, None].repeat_interleave(N_samp, 0)
-    #     return torch.concat((new_imids, new_xs.long(), new_ys.long()), dim=1), gt_embeds.to(self.device)

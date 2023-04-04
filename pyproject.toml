@@ -4,7 +4,11 @@ version = "0.1.0"
 
 dependencies=[
     "open_clip_torch",
-    "timm"
+    "timm",
+    "ftfy",
+    "regex",
+    "tqdm",
+    "clip @ git+https://github.com/openai/CLIP.git"
 ]
 
 [tool.setuptools.packages.find]
