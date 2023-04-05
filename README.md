@@ -11,7 +11,7 @@ This is the official implementation for [LERF](https://lerf.io).
 </div>
 
 # Installation
-LERF follows the integration guidelines described [here](https://docs.nerf.studio/en/latest/developer_guides/config.html#extending-nerfstudio-with-custom-methods) for custom methods within Nerfstudio. 
+LERF follows the integration guidelines described [here](https://docs.nerf.studio/en/latest/developer_guides/new_methods.html) for custom methods within Nerfstudio. 
 
 ### 1. Install Nerfstudio From Source
 Follow instructions [at this link](https://docs.nerf.studio/en/latest/quickstart/installation.html) to install Nerfstudio **from source**. Checkout the Nerfstudio branch `lerf-merge`.
