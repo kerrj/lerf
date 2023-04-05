@@ -11,7 +11,7 @@ This is the official implementation for [LERF](https://lerf.io).
 </div>
 
 # Installation
-LERF follows the integration guidelines described [here](https://docs.nerf.studio/en/latest/developer_guides/config.html#extending-nerfstudio-with-custom-methods) for custom methods within Nerfstudio. 
+LERF follows the integration guidelines described [here](https://docs.nerf.studio/en/latest/developer_guides/new_methods.html) for custom methods within Nerfstudio. 
 
 ### 1. Install Nerfstudio From Source
 Follow instructions [at this link](https://docs.nerf.studio/en/latest/quickstart/installation.html) to install Nerfstudio **from source**. Checkout the Nerfstudio branch `lerf-merge`.
@@ -63,5 +63,11 @@ If your GPU is struggling on memory, we provide a `lerf-lite` implementation tha
 
 # Extending LERF
 Be mindful that code for visualization will change as more features are integrated into Nerfstudio, so if you fork this repo and build off of it, check back regularly for extra changes.
+### Issues
+Please open Github issues for any installation/usage problems you run into. We've tried to support as broad a range of GPUs as possible with `lerf-lite`, but it might be necessary to provide even more low-footprint versions. Thank you!
+### Using custom image encoders
+We've designed the code to modularly accept any image encoder that implements the interface in `BaseImageEncoder` (`image_encoder.py`). An example of different encoder implementations can be seen in `clip_encoder.py` vs `openclip_encoder.py`, which implement OpenAI's CLIP and OpenCLIP respectively.
+### Code structure
+(TODO expand this section)
+The main file to look at for editing and building off LERF is `lerf.py`, which extends the Nerfacto model from Nerfstudio, adds an additional language field, losses, and visualization. The CLIP and DINO pre-processing are carried out by `pyramid_interpolator.py` and `dino_dataloader.py`.
 
-Please open Github issues for any installation/usage problems you run into, especially GPU related issues. We've tried to support as broad a range of GPUs as possible with `lerf-lite`, but it might be necessary to provide even more low-footprint versions. Thank you!
