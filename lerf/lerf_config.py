@@ -63,7 +63,7 @@ lerf_method = MethodSpecification(
             },
             "lerf": {
                 "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15),
-                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=7000),
+                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=4000),
             },
         },
         viewer=ViewerConfig(num_rays_per_chunk=1 << 15),

@@ -149,7 +149,6 @@ class LERFModel(NerfactoModel):
         image_height, image_width = camera_ray_bundle.origins.shape[:2]
         num_rays = len(camera_ray_bundle)
         outputs_lists = defaultdict(list)  # dict from name:list of outputs (1 per bundle)
-
         for i in range(0, num_rays, num_rays_per_chunk):
             start_idx = i
             end_idx = i + num_rays_per_chunk
