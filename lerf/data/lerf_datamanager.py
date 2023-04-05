@@ -25,24 +25,19 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import torch
 import yaml
-from rich.progress import Console
-
 from nerfstudio.cameras.rays import RayBundle
 from nerfstudio.data.utils.nerfstudio_collate import nerfstudio_collate
 from nerfstudio.engine.callbacks import TrainingCallback, TrainingCallbackAttributes
 from nerfstudio.model_components.ray_generators import RayGenerator
 from nerfstudio.utils.misc import IterableWrapper
+from rich.progress import Console
 
 CONSOLE = Console(width=120)
 
 from lerf.data.utils.dino_dataloader import DinoDataloader
 from lerf.data.utils.pyramid_embedding_dataloader import PyramidEmbeddingDataloader
 from lerf.encoders.image_encoder import BaseImageEncoder
-
-from nerfstudio.data.datamanagers.base_datamanager import (
-    VanillaDataManager,
-    VanillaDataManagerConfig,
-)
+from nerfstudio.data.datamanagers.base_datamanager import VanillaDataManager, VanillaDataManagerConfig
 
 
 @dataclass
@@ -88,6 +83,13 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
         clip_cache_path = Path(osp.join(cache_dir, f"clip_{self.image_encoder.name}"))
         dino_cache_path = Path(osp.join(cache_dir, "dino.npy"))
         # NOTE: cache config is sensitive to list vs. tuple, because it checks for dict equality
+        self.dino_dataloader = DinoDataloader(
+            image_list=images,
+            device=self.device,
+            cfg={"image_shape": list(images.shape[2:4])},
+            cache_path=dino_cache_path,
+        )
+        torch.cuda.empty_cache()
         self.clip_interpolator = PyramidEmbeddingDataloader(
             image_list=images,
             device=self.device,
@@ -96,16 +98,10 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
                 "tile_size_res": 7,
                 "stride_scaler": 0.5,
                 "image_shape": list(images.shape[2:4]),
-                "model_name": self.image_encoder.name
+                "model_name": self.image_encoder.name,
             },
             cache_path=clip_cache_path,
             model=self.image_encoder,
-        )
-        self.dino_dataloader = DinoDataloader(
-            image_list=images,
-            device=self.device,
-            cfg={"image_shape": list(images.shape[2:4])},
-            cache_path=dino_cache_path,
         )
 
     def next_train(self, step: int) -> Tuple[RayBundle, Dict]:
