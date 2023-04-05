@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import torch
 from lerf.data.utils.feature_dataloader import FeatureDataloader
@@ -38,12 +40,22 @@ class PatchEmbeddingDataloader(FeatureDataloader):
                 np.floor((cfg["image_shape"][1] + 2 * self.padding - (self.kernel_size - 1) - 1) / self.stride + 1)
             )
         )
-        self.center_x = torch.from_numpy(self.center_x).to(device).half()
-        self.center_y = torch.from_numpy(self.center_y).to(device).half()
+        self.center_x = torch.from_numpy(self.center_x).half()
+        self.center_y = torch.from_numpy(self.center_y).half()
 
         self.model = model
         self.embed_size = self.model.embedding_dim
         super().__init__(cfg, device, image_list, cache_path)
+
+    def load(self):
+        cache_info_path = self.cache_path.with_suffix(".info")
+        if not cache_info_path.exists():
+            raise FileNotFoundError
+        with open(cache_info_path, "r") as f:
+            cfg = json.loads(f.read())
+        if cfg != self.cfg:
+            raise ValueError("Config mismatch")
+        self.data = torch.from_numpy(np.load(self.cache_path)).half()
 
     def create(self, image_list):
         assert self.model is not None, "model must be provided to generate features"
@@ -63,7 +75,7 @@ class PatchEmbeddingDataloader(FeatureDataloader):
     def __call__(self, img_points):
         # img_points: (B, 3) # (img_ind, x, y) (img_ind, row, col)
         # return: (B, 512)
-        img_points = img_points.to(self.device)
+        img_points = img_points.cpu()
         img_ind, img_points_x, img_points_y = img_points[:, 0], img_points[:, 1], img_points[:, 2]
 
         x_ind = torch.searchsorted(self.center_x, img_points_x, side="left") - 1
@@ -71,6 +83,7 @@ class PatchEmbeddingDataloader(FeatureDataloader):
         return self._interp_inds(img_ind, x_ind, y_ind, img_points_x, img_points_y)
 
     def _interp_inds(self, img_ind, x_ind, y_ind, img_points_x, img_points_y):
+        img_ind = img_ind.to(self.data.device)  # self.data is on cpu to save gpu memory, hence this line
         topleft = self.data[img_ind, x_ind, y_ind].to(self.device)
         topright = self.data[img_ind, x_ind + 1, y_ind].to(self.device)
         botleft = self.data[img_ind, x_ind, y_ind + 1].to(self.device)
@@ -78,11 +91,11 @@ class PatchEmbeddingDataloader(FeatureDataloader):
 
         x_stride = self.stride
         y_stride = self.stride
-        right_w = (img_points_x - (self.center_x[x_ind])) / x_stride  # .half()
+        right_w = ((img_points_x - (self.center_x[x_ind])) / x_stride).to(self.device)  # .half()
         top = torch.lerp(topleft, topright, right_w[:, None])
         bot = torch.lerp(botleft, botright, right_w[:, None])
 
-        bot_w = (img_points_y - (self.center_y[y_ind])) / y_stride  # .half()
+        bot_w = ((img_points_y - (self.center_y[y_ind])) / y_stride).to(self.device)  # .half()
         return torch.lerp(top, bot, bot_w[:, None])
 
     def _embed_clip_tiles(self, image, unfold_func):
