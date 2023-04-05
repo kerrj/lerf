@@ -1,7 +1,7 @@
 # LERF: Language Embedded Radiance Fields
 This is the official implementation for [LERF](https://lerf.io).
 
-**NOTE**: LERF is fully usable, however complete integration with Nerfstudio is not *fully* complete. Remaining TODOs:
+**NOTE**: LERF is fully usable, however complete integration with Nerfstudio is not *fully* complete, as it requires a temporary separate branch `lerf-merge` in the Nerfstudio repo. In the coming few weeks this will be removed when code is refactored to more seamlessly support LERF. Remaining TODOs:
 - [ ] Refactor Nerfstudio viewer to allow adding javascript components from within model files (this will remove the need for hard-coding a textbox into the viewer)
 - [ ] Integrate into `ns-render` commands to render videos from the command line with custom prompts
 
@@ -22,7 +22,7 @@ Follow instructions [at this link](https://docs.nerf.studio/en/latest/quickstart
 Follow the instructions [at this link](https://docs.nerf.studio/en/latest/developer_guides/viewer/viewer_overview.html#installing-and-running-locally) to build the viewer locally. **Make sure you are on the branch `lerf-merge`**, since this has extra code for a textbox in the viewer.
 
 ### 3. Install the `lerf` package
-Navigate to this folder and run `python -m pip install -e`. This installs entrypoints for Nerfstudio to use
+Navigate to this folder and run `python -m pip install -e .` This installs entrypoints for Nerfstudio to use
 
 ### 4. Run `ns-install-cli`
 This will update the Nerfstudio `ns-train` command to register the LERF method.
@@ -57,9 +57,11 @@ The Nerfstudio viewer dynamically changes resolution to achieve a desired traini
 
 **To increase resolution, pause training**. Rendering at high resolution (512 or above) can take a second or two, so we recommend rendering at 256px
 ## `lerf-big` and `lerf-lite`
-If your GPU is struggling on memory, we provide a `lerf-lite` implementation that reduces the LERF network capacity and number of samples along rays. If you find you still need to reduce memory footprint, the most impactful parameters for memory are `num_lerf_samples` and 
+If your GPU is struggling on memory, we provide a `lerf-lite` implementation that reduces the LERF network capacity and number of samples along rays. If you find you still need to reduce memory footprint, the most impactful parameters for memory are `num_lerf_samples`, hashgrid levels, and hashgrid size.
 
 `lerf-big` provides a larger model that uses ViT-L/14 instead of ViT-B/16 for those with large memory GPUs.
 
 # Extending LERF
-TODO
+Be mindful that code for visualization will change as more features are integrated into Nerfstudio, so if you fork this repo and build off of it, check back regularly for extra changes.
+
+Please open Github issues for any installation/usage problems you run into, especially GPU related issues. We've tried to support as broad a range of GPUs as possible with `lerf-lite`, but it might be necessary to provide even more low-footprint versions. Thank you!
