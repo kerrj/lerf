@@ -5,12 +5,6 @@ from typing import Dict, List, Tuple, Type
 import numpy as np
 import open_clip
 import torch
-from lerf.encoders.image_encoder import BaseImageEncoder
-from lerf.lerf_field import LERFField
-from lerf.lerf_fieldheadnames import LERFFieldHeadNames
-from lerf.lerf_renderers import CLIPRenderer, MeanRenderer
-from torch.nn import Parameter
-
 from nerfstudio.cameras.rays import RayBundle, RaySamples
 from nerfstudio.data.scene_box import SceneBox
 from nerfstudio.field_components.field_heads import FieldHeadNames
@@ -18,6 +12,12 @@ from nerfstudio.field_components.spatial_distortions import SceneContraction
 from nerfstudio.model_components.ray_samplers import PDFSampler
 from nerfstudio.model_components.renderers import DepthRenderer
 from nerfstudio.models.nerfacto import NerfactoModel, NerfactoModelConfig
+from torch.nn import Parameter
+
+from lerf.encoders.image_encoder import BaseImageEncoder
+from lerf.lerf_field import LERFField
+from lerf.lerf_fieldheadnames import LERFFieldHeadNames
+from lerf.lerf_renderers import CLIPRenderer, MeanRenderer
 
 
 @dataclass
@@ -206,10 +206,12 @@ class LERFModel(NerfactoModel):
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None):
         loss_dict = super().get_loss_dict(outputs, batch, metrics_dict)
-        loss_dict["clip_loss"] = self.config.clip_loss_weight * torch.nn.functional.huber_loss(
-            outputs["clip"], batch["clip"], delta=1.25
+        unreduced_clip = self.config.clip_loss_weight * torch.nn.functional.huber_loss(
+            outputs["clip"], batch["clip"], delta=1.25, reduction="none"
         )
-        loss_dict["dino_loss"] = torch.nn.functional.mse_loss(outputs["dino"], batch["dino"])
+        loss_dict["clip_loss"] = unreduced_clip.mean(dim=-1).nanmean()
+        unreduced_dino = torch.nn.functional.mse_loss(outputs["dino"], batch["dino"], reduction="none")
+        loss_dict["dino_loss"] = unreduced_dino.mean(dim=-1).nanmean()
         return loss_dict
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
