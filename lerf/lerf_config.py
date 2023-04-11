@@ -109,7 +109,7 @@ lerf_method_big = MethodSpecification(
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=30000),
             },
             "lerf": {
-                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=3000),
             },
         },
@@ -156,7 +156,7 @@ lerf_method_lite = MethodSpecification(
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=30000),
             },
             "lerf": {
-                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=7000),
             },
         },
