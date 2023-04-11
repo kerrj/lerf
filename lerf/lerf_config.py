@@ -2,10 +2,6 @@
 LERF configuration file.
 """
 
-from lerf.data.lerf_datamanager import LERFDataManagerConfig
-from lerf.lerf import LERFModelConfig
-from lerf.lerf_pipeline import LERFPipelineConfig
-
 from nerfstudio.cameras.camera_optimizers import CameraOptimizerConfig
 from nerfstudio.configs.base_config import ViewerConfig
 from nerfstudio.data.dataparsers.nerfstudio_dataparser import NerfstudioDataParserConfig
@@ -13,6 +9,10 @@ from nerfstudio.engine.optimizers import AdamOptimizerConfig, RAdamOptimizerConf
 from nerfstudio.engine.schedulers import ExponentialDecaySchedulerConfig
 from nerfstudio.engine.trainer import TrainerConfig
 from nerfstudio.plugins.types import MethodSpecification
+
+from lerf.data.lerf_datamanager import LERFDataManagerConfig
+from lerf.lerf import LERFModelConfig
+from lerf.lerf_pipeline import LERFPipelineConfig
 
 """
 Swap out the network config to use OpenCLIP or CLIP here.
@@ -62,7 +62,7 @@ lerf_method = MethodSpecification(
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=30000),
             },
             "lerf": {
-                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=4000),
             },
         },
