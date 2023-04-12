@@ -206,12 +206,13 @@ class LERFModel(NerfactoModel):
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None):
         loss_dict = super().get_loss_dict(outputs, batch, metrics_dict)
-        unreduced_clip = self.config.clip_loss_weight * torch.nn.functional.huber_loss(
-            outputs["clip"], batch["clip"], delta=1.25, reduction="none"
-        )
-        loss_dict["clip_loss"] = unreduced_clip.sum(dim=-1).nanmean()
-        unreduced_dino = torch.nn.functional.mse_loss(outputs["dino"], batch["dino"], reduction="none")
-        loss_dict["dino_loss"] = unreduced_dino.sum(dim=-1).nanmean()
+        if self.training:
+            unreduced_clip = self.config.clip_loss_weight * torch.nn.functional.huber_loss(
+                outputs["clip"], batch["clip"], delta=1.25, reduction="none"
+            )
+            loss_dict["clip_loss"] = unreduced_clip.sum(dim=-1).nanmean()
+            unreduced_dino = torch.nn.functional.mse_loss(outputs["dino"], batch["dino"], reduction="none")
+            loss_dict["dino_loss"] = unreduced_dino.sum(dim=-1).nanmean()
         return loss_dict
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
