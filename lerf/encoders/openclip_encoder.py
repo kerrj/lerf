@@ -9,7 +9,9 @@ try:
 except ImportError:
     assert False, "open_clip is not installed, install it with `pip install open-clip-torch`"
 
-from lerf.encoders.image_encoder import BaseImageEncoder, BaseImageEncoderConfig
+from lerf.encoders.image_encoder import (BaseImageEncoder,
+                                         BaseImageEncoderConfig)
+from nerfstudio.viewer.server.viewer_elements import ViewerText
 
 
 @dataclass
@@ -20,8 +22,10 @@ class OpenCLIPNetworkConfig(BaseImageEncoderConfig):
     clip_n_dims: int = 512
     negatives: Tuple[str] = ("object", "things", "stuff", "texture")
 
+
 class OpenCLIPNetwork(BaseImageEncoder):
     def __init__(self, config: OpenCLIPNetworkConfig):
+        super().__init__()
         self.config = config
         self.process = torchvision.transforms.Compose(
             [
@@ -42,7 +46,9 @@ class OpenCLIPNetwork(BaseImageEncoder):
         self.model = model.to("cuda")
         self.clip_n_dims = self.config.clip_n_dims
 
-        self.positives = ["hand sanitizer"]
+        self.positive_input = ViewerText("LERF Positives", "", cb_hook=self.set_positives)
+
+        self.positives = self.positive_input.value.split(";")
         self.negatives = self.config.negatives
         with torch.no_grad():
             tok_phrases = torch.cat([self.tokenizer(phrase) for phrase in self.positives]).to("cuda")
@@ -67,8 +73,8 @@ class OpenCLIPNetwork(BaseImageEncoder):
     def embedding_dim(self) -> int:
         return self.config.clip_n_dims
 
-    def set_positives(self, text_list):
-        self.positives = text_list
+    def set_positives(self, handle):
+        self.positives = self.positive_input.value.split(";")
         with torch.no_grad():
             tok_phrases = torch.cat([self.tokenizer(phrase) for phrase in self.positives]).to("cuda")
             self.pos_embeds = self.model.encode_text(tok_phrases)
