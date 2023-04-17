@@ -1,10 +1,6 @@
 # LERF: Language Embedded Radiance Fields
 This is the official implementation for [LERF](https://lerf.io).
 
-**NOTE**: LERF is fully usable, however complete integration with Nerfstudio is not *fully* complete, as it requires a temporary separate branch `lerf-merge` in the Nerfstudio repo. In the coming few weeks this will be removed when code is refactored to more seamlessly support LERF. Remaining TODOs:
-- [ ] Refactor Nerfstudio viewer to allow adding javascript components from within model files (this will remove the need for hard-coding a textbox into the viewer)
-- [ ] Integrate into `ns-render` commands to render videos from the command line with custom prompts
-
 
 <div align='center'>
 <img src="https://www.lerf.io/data/nerf_render.svg" height="230px">
@@ -12,19 +8,14 @@ This is the official implementation for [LERF](https://lerf.io).
 
 # Installation
 LERF follows the integration guidelines described [here](https://docs.nerf.studio/en/latest/developer_guides/new_methods.html) for custom methods within Nerfstudio. 
+### 0. Install Nerfstudio dependencies
+[Follow these instructions](https://docs.nerf.studio/en/latest/quickstart/installation.html) up to and including "tinycudann" to install dependencies and create an environment
+### 1. Clone this repo
+`git clone https://github.com/kerrj/lerf`
+### 2. Install this repo as a python package
+Navigate to this folder and run `python -m pip install -e .`
 
-### 1. Install Nerfstudio From Source
-Follow instructions [at this link](https://docs.nerf.studio/en/latest/quickstart/installation.html) to install Nerfstudio **from source**. Checkout the Nerfstudio branch `lerf-merge`.
-
-### 2. Build the viewer
-**NOTE**: When full integration is complete, this will be unnecessary, however in the meantime we need to build the viewer ourselves to enable text prompts.
-
-Follow the instructions [at this link](https://docs.nerf.studio/en/latest/developer_guides/viewer/viewer_overview.html#installing-and-running-locally) to build the viewer locally. **Make sure you are on the branch `lerf-merge`**, since this has extra code for a textbox in the viewer.
-
-### 3. Install the `lerf` package
-Navigate to this folder and run `python -m pip install -e .` This installs entrypoints for Nerfstudio to use
-
-### 4. Run `ns-install-cli`
+### 3. Run `ns-install-cli`
 This will update the Nerfstudio `ns-train` command to register the LERF method.
 
 ### Checking the install
@@ -34,8 +25,7 @@ Run `ns-train -h`: you should see a list of "subcommands" with lerf, lerf-big, a
 Now that LERF is installed you can play with it! 
 
 - Launch training with `ns-train lerf --data <data_folder>`. This specifies a data folder to use. For more details, see [Nerfstudio documentation](https://docs.nerf.studio/en/latest/quickstart/first_nerf.html). 
-- Launch the viewer by navigating to `nerfstudio/nerfstudio/viewer/app` and executing `yarn start`. This will provide a port number <server_port> (typically 4000).
-- Connect to the viewer by forwarding the viewer port (we use VSCode to do this), and connect to `http://localhost:<server_port>/?websocket_url=ws://localhost:<viewer_port>` in your browser. The viewer port is provided in the `ns-train` output in a green box at the bottom.
+- Connect to the viewer by forwarding the viewer port (we use VSCode to do this), and click the link to `viewer.nerf.studio` provided in the output of the train script
 - Within the viewer, you can type text into the textbox, then select the `relevancy_0` output type to visualize relevancy maps.
 
 ## Relevancy Map Normalization
@@ -65,6 +55,8 @@ If your GPU is struggling on memory, we provide a `lerf-lite` implementation tha
 Be mindful that code for visualization will change as more features are integrated into Nerfstudio, so if you fork this repo and build off of it, check back regularly for extra changes.
 ### Issues
 Please open Github issues for any installation/usage problems you run into. We've tried to support as broad a range of GPUs as possible with `lerf-lite`, but it might be necessary to provide even more low-footprint versions. Thank you!
+#### Known TODOs
+- [ ] Integrate into `ns-render` commands to render videos from the command line with custom prompts
 ### Using custom image encoders
 We've designed the code to modularly accept any image encoder that implements the interface in `BaseImageEncoder` (`image_encoder.py`). An example of different encoder implementations can be seen in `clip_encoder.py` vs `openclip_encoder.py`, which implement OpenAI's CLIP and OpenCLIP respectively.
 ### Code structure
