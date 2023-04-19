@@ -16,7 +16,6 @@ LERF follows the integration guidelines described [here](https://docs.nerf.studi
 Navigate to this folder and run `python -m pip install -e .`
 
 ### 3. Run `ns-install-cli`
-This will update the Nerfstudio `ns-train` command to register the LERF method.
 
 ### Checking the install
 Run `ns-train -h`: you should see a list of "subcommands" with lerf, lerf-big, and lerf-lite included among them.
