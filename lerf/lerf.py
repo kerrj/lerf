@@ -12,6 +12,7 @@ from nerfstudio.field_components.spatial_distortions import SceneContraction
 from nerfstudio.model_components.ray_samplers import PDFSampler
 from nerfstudio.model_components.renderers import DepthRenderer
 from nerfstudio.models.nerfacto import NerfactoModel, NerfactoModelConfig
+from nerfstudio.viewer.server.viewer_elements import *
 from torch.nn import Parameter
 
 from lerf.encoders.image_encoder import BaseImageEncoder
@@ -49,6 +50,32 @@ class LERFModel(NerfactoModel):
             self.config.hashgrid_resolutions,
             clip_n_dims=self.image_encoder.embedding_dim,
         )
+
+        # populate some viewer logic
+        # TODO use the values from this code to select the scale
+        # def scale_cb(element):
+        #     self.config.n_scales = element.value
+
+        # self.n_scale_slider = ViewerSlider("N Scales", 15, 5, 30, 1, cb_hook=scale_cb)
+
+        # def max_cb(element):
+        #     self.config.max_scale = element.value
+
+        # self.max_scale_slider = ViewerSlider("Max Scale", 1.5, 0, 5, 0.05, cb_hook=max_cb)
+
+        # def hardcode_scale_cb(element):
+        #     self.hardcoded_scale = element.value
+
+        # self.hardcoded_scale_slider = ViewerSlider(
+        #     "Hardcoded Scale", 1.0, 0, 5, 0.05, cb_hook=hardcode_scale_cb, disabled=True
+        # )
+
+        # def single_scale_cb(element):
+        #     self.n_scale_slider.set_disabled(element.value)
+        #     self.max_scale_slider.set_disabled(element.value)
+        #     self.hardcoded_scale_slider.set_disabled(not element.value)
+
+        # self.single_scale_box = ViewerCheckbox("Single Scale", False, cb_hook=single_scale_cb)
 
     def get_max_across(self, ray_samples, weights, hashgrid_field, scales_shape, preset_scales=None):
         # TODO smoothen this out

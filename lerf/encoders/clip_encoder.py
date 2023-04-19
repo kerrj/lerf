@@ -11,6 +11,7 @@ except ImportError:
 
 from lerf.encoders.image_encoder import BaseImageEncoder, BaseImageEncoderConfig
 
+
 @dataclass
 class CLIPNetworkConfig(BaseImageEncoderConfig):
     _target: Type = field(default_factory=lambda: CLIPNetwork)
@@ -18,8 +19,10 @@ class CLIPNetworkConfig(BaseImageEncoderConfig):
     clip_n_dims: int = 512
     negatives: Tuple[str] = ("object", "things", "stuff", "texture")
 
+
 class CLIPNetwork(BaseImageEncoder):
     def __init__(self, config: CLIPNetworkConfig):
+        super().__init__()
         self.config = config
         self.process = torchvision.transforms.Compose(
             [

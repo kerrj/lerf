@@ -8,7 +8,8 @@ dependencies=[
     "ftfy",
     "regex",
     "tqdm",
-    "clip @ git+https://github.com/openai/CLIP.git"
+    "clip @ git+https://github.com/openai/CLIP.git",
+    "nerfstudio==0.2.0"
 ]
 
 [tool.setuptools.packages.find]

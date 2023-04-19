@@ -3,14 +3,16 @@ from dataclasses import dataclass, field
 from typing import Type
 
 import torch
-
 from nerfstudio.configs import base_config as cfg
+from torch import nn
+
 
 @dataclass
 class BaseImageEncoderConfig(cfg.InstantiateConfig):
     _target: Type = field(default_factory=lambda: BaseImageEncoder)
 
-class BaseImageEncoder:
+
+class BaseImageEncoder(nn.Module):
     @abstractproperty
     def name(self) -> str:
         """
