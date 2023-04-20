@@ -9,11 +9,11 @@ dependencies=[
     "regex",
     "tqdm",
     "clip @ git+https://github.com/openai/CLIP.git",
-    "nerfstudio==0.2.0"
+    "nerfstudio>=0.2.0"
 ]
 
 [tool.setuptools.packages.find]
-include = ["lerf"]
+include = ["lerf*"]
 
 [project.entry-points.'nerfstudio.method_configs']
 lerf = 'lerf.lerf_config:lerf_method'
