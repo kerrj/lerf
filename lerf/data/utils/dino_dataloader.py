@@ -27,6 +27,11 @@ class DinoDataloader(FeatureDataloader):
     ):
         assert "image_shape" in cfg
         super().__init__(cfg, device, image_list, cache_path)
+        # Do distillation-preprocessing as noted in N3F:
+        # The features are then L2-normalized and reduced with PCA to 64 dimensions before distillation.
+        data_shape = self.data.shape
+        self.data = self.data / self.data.norm(dim=-1, keepdim=True) 
+        self.data = torch.pca_lowrank(self.data.reshape(-1, data_shape[-1]), q=64)[0].reshape((*data_shape[:-1], 64))
 
     def create(self, image_list):
         extractor = ViTExtractor(self.dino_model_type, self.dino_stride)
