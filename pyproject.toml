@@ -12,6 +12,9 @@ dependencies=[
     "nerfstudio>=0.2.0"
 ]
 
+[tool.setuptools.packages.find]
+include = ["lerf*"]
+
 [project.entry-points.'nerfstudio.method_configs']
 lerf = 'lerf.lerf_config:lerf_method'
 lerf_big = 'lerf.lerf_config:lerf_method_big'
