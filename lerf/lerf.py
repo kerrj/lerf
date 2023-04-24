@@ -12,6 +12,7 @@ from nerfstudio.field_components.spatial_distortions import SceneContraction
 from nerfstudio.model_components.ray_samplers import PDFSampler
 from nerfstudio.model_components.renderers import DepthRenderer
 from nerfstudio.models.nerfacto import NerfactoModel, NerfactoModelConfig
+from nerfstudio.utils.colormaps import apply_colormap
 from nerfstudio.viewer.server.viewer_elements import *
 from torch.nn import Parameter
 
@@ -213,6 +214,10 @@ class LERFModel(NerfactoModel):
                 # TODO: handle lists of tensors as well
                 continue
             outputs[output_name] = torch.cat(outputs_list).view(image_height, image_width, -1)  # type: ignore
+        p_i = torch.clip(outputs["relevancy_0"] - 0.5, 0, 1)
+        outputs["composited"] = apply_colormap(p_i / (p_i.max() + 1e-6), "turbo")
+        mask = (outputs["relevancy_0"] < 0.5).squeeze()
+        outputs["composited"][mask, :] = outputs["rgb"][mask, :]
         return outputs
 
     def _get_outputs_nerfacto(self, ray_samples: RaySamples):
