@@ -81,7 +81,7 @@ class LERFModel(NerfactoModel):
         # TODO smoothen this out
         if preset_scales is not None:
             assert len(preset_scales) == len(self.image_encoder.positives)
-            scales_list = torch.tensor(preset_scales)
+            scales_list = torch.as_tensor(preset_scales)
         else:
             scales_list = torch.linspace(0.0, self.config.max_scale, self.config.n_scales)
 
@@ -89,7 +89,7 @@ class LERFModel(NerfactoModel):
         n_phrases = len(self.image_encoder.positives)
         n_phrases_maxs = [None for _ in range(n_phrases)]
         n_phrases_sims = [None for _ in range(n_phrases)]
-        for _, scale in enumerate(scales_list):
+        for i, scale in enumerate(scales_list):
             scale = scale.item()
             with torch.no_grad():
                 clip_output = self.lerf_field.get_output_from_hashgrid(
@@ -99,12 +99,13 @@ class LERFModel(NerfactoModel):
                 )
             clip_output = self.renderer_clip(embeds=clip_output, weights=weights.detach())
 
-            for i in range(n_phrases):
-                probs = self.image_encoder.get_relevancy(clip_output, i)
-                pos_prob = probs[..., 0:1]
-                if n_phrases_maxs[i] is None or pos_prob.max() > n_phrases_sims[i].max():
-                    n_phrases_maxs[i] = scale
-                    n_phrases_sims[i] = pos_prob
+            for j in range(n_phrases):
+                if preset_scales is None or j == i:
+                    probs = self.image_encoder.get_relevancy(clip_output, j)
+                    pos_prob = probs[..., 0:1]
+                    if n_phrases_maxs[j] is None or pos_prob.max() > n_phrases_sims[j].max():
+                        n_phrases_maxs[j] = scale
+                        n_phrases_sims[j] = pos_prob
         return torch.stack(n_phrases_sims), torch.Tensor(n_phrases_maxs)
 
     def get_outputs(self, ray_bundle: RayBundle):
