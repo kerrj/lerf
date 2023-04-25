@@ -214,10 +214,11 @@ class LERFModel(NerfactoModel):
                 # TODO: handle lists of tensors as well
                 continue
             outputs[output_name] = torch.cat(outputs_list).view(image_height, image_width, -1)  # type: ignore
-        p_i = torch.clip(outputs["relevancy_0"] - 0.5, 0, 1)
-        outputs["composited"] = apply_colormap(p_i / (p_i.max() + 1e-6), "turbo")
-        mask = (outputs["relevancy_0"] < 0.5).squeeze()
-        outputs["composited"][mask, :] = outputs["rgb"][mask, :]
+        for i in range(len(self.image_encoder.positives)):
+            p_i = torch.clip(outputs[f"relevancy_{i}"] - 0.5, 0, 1)
+            outputs[f"composited_{i}"] = apply_colormap(p_i / (p_i.max() + 1e-6), "turbo")
+            mask = (outputs["relevancy_0"] < 0.5).squeeze()
+            outputs[f"composited_{i}"][mask, :] = outputs["rgb"][mask, :]
         return outputs
 
     def _get_outputs_nerfacto(self, ray_samples: RaySamples):
