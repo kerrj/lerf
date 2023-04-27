@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
+import numpy as np
 import torch
 import yaml
 from nerfstudio.cameras.rays import RayBundle
@@ -39,6 +40,8 @@ from lerf.data.utils.pyramid_embedding_dataloader import PyramidEmbeddingDataloa
 from lerf.encoders.image_encoder import BaseImageEncoder
 from nerfstudio.data.datamanagers.base_datamanager import VanillaDataManager, VanillaDataManagerConfig
 
+from segment_anything import build_sam_vit_b, build_sam_vit_h, SamPredictor
+
 
 @dataclass
 class LERFDataManagerConfig(VanillaDataManagerConfig):
@@ -46,6 +49,7 @@ class LERFDataManagerConfig(VanillaDataManagerConfig):
     patch_tile_size_range: Tuple[int, int] = (0.05, 0.5)
     patch_tile_size_res: int = 7
     patch_stride_scaler: float = 0.5
+    sam_ckpt_path: str = osp.join(osp.dirname(osp.abspath(__file__)), "../sam_vit_h.pth")
 
 
 class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
@@ -83,12 +87,8 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
         clip_cache_path = Path(osp.join(cache_dir, f"clip_{self.image_encoder.name}"))
         dino_cache_path = Path(osp.join(cache_dir, "dino.npy"))
         # NOTE: cache config is sensitive to list vs. tuple, because it checks for dict equality
-        self.dino_dataloader = DinoDataloader(
-            image_list=images,
-            device=self.device,
-            cfg={"image_shape": list(images.shape[2:4])},
-            cache_path=dino_cache_path,
-        )
+        cache_path = Path(osp.join(cache_dir, "sam_features_vit_h.npy"))
+        self.sam_dataloader = self._create_sam_dataloader(cache_path=cache_path)
         torch.cuda.empty_cache()
         self.clip_interpolator = PyramidEmbeddingDataloader(
             image_list=images,
@@ -104,6 +104,35 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
             model=self.image_encoder,
         )
 
+    def _create_sam_dataloader(self, cache_path: str):
+        sam_feats = []
+
+        if osp.exists(cache_path):
+            sam_feats = np.load(cache_path, allow_pickle=True)
+        else:
+            sam_predictor = SamPredictor(build_sam_vit_h(checkpoint=self.config.sam_ckpt_path).eval().to(self.device))
+            for image in tqdm(self.train_dataset, desc="SAM features"):
+                # WARNING outputs a different pca grouping than the original code 
+                # -- spatially consistent, so the 3D pca visualizations seem fine.
+                sam_predictor.set_image((image['image'].numpy()*255).astype(np.uint8))
+                dim = int(64*(image['image'].shape[0]/image['image'].shape[1]))
+                sam_feats.append(sam_predictor.features[:, :, :dim, :].permute(0, 2, 3, 1).detach().cpu().numpy())
+            sam_feats = np.concatenate(sam_feats, axis=0)
+            np.save(cache_path, sam_feats)
+
+        def sam_dataloader_fn(indices):
+            img_shape = self.train_dataset[0]['image'].shape[:2]
+            img_scale = (
+                sam_feats.shape[1] / img_shape[0],
+                sam_feats.shape[2] / img_shape[1],
+            )
+            x_ind, y_ind = (indices[:, 1] * img_scale[0]).long(), (indices[:, 2] * img_scale[1]).long()
+            return torch.from_numpy(sam_feats[indices[:, 0].long(), x_ind, y_ind]).to(self.device)
+
+        torch.cuda.empty_cache()
+
+        return sam_dataloader_fn
+
     def next_train(self, step: int) -> Tuple[RayBundle, Dict]:
         """Returns the next batch of data from the train dataloader."""
         self.train_count += 1
@@ -113,7 +142,7 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
         ray_indices = batch["indices"]
         ray_bundle = self.train_ray_generator(ray_indices)
         batch["clip"], clip_scale = self.clip_interpolator(ray_indices)
-        batch["dino"] = self.dino_dataloader(ray_indices)
+        batch["sam"] = self.sam_dataloader(ray_indices)
         ray_bundle.metadata["clip_scales"] = clip_scale
         # assume all cameras have the same focal length and image width
         ray_bundle.metadata["fx"] = self.train_dataset.cameras[0].fx.item()

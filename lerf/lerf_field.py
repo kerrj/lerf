@@ -56,9 +56,9 @@ class LERFField(Field):
             },
         )
 
-        self.dino_net = tcnn.Network(
+        self.sam_net = tcnn.Network(
             n_input_dims=tot_out_dims,
-            n_output_dims=384,
+            n_output_dims=256,
             network_config={
                 "otype": "CutlassMLP",
                 "activation": "ReLU",
@@ -100,8 +100,8 @@ class LERFField(Field):
         clip_pass = self.clip_net(torch.cat([x, clip_scales.view(-1, 1)], dim=-1)).view(*ray_samples.frustums.shape, -1)
         outputs[LERFFieldHeadNames.CLIP] = clip_pass / clip_pass.norm(dim=-1, keepdim=True)
 
-        dino_pass = self.dino_net(x).view(*ray_samples.frustums.shape, -1)
-        outputs[LERFFieldHeadNames.DINO] = dino_pass
+        sam_pass = self.sam_net(x).view(*ray_samples.frustums.shape, -1)
+        outputs[LERFFieldHeadNames.SAM] = sam_pass
 
         return outputs
 

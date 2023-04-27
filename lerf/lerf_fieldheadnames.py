@@ -5,4 +5,5 @@ class LERFFieldHeadNames(Enum):
     """Possible field outputs"""
     HASHGRID = "hashgrid"
     CLIP = "clip"
-    DINO = "dino"
+    # DINO = "dino"
+    SAM = "sam"
