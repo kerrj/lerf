@@ -82,7 +82,7 @@ class LERFModel(NerfactoModel):
         # TODO smoothen this out
         if preset_scales is not None:
             assert len(preset_scales) == len(self.image_encoder.positives)
-            scales_list = torch.tensor(preset_scales)
+            scales_list = preset_scales
         else:
             scales_list = torch.linspace(0.0, self.config.max_scale, self.config.n_scales)
 
@@ -119,7 +119,7 @@ class LERFModel(NerfactoModel):
         def gather_fn(tens):
             return torch.gather(tens, -2, best_ids.expand(*best_ids.shape[:-1], tens.shape[-1]))
 
-        dataclass_fn = lambda dc: dc._apply_fn_to_fields(gather_fn, dataclass_fn)
+        def dataclass_fn(dc): return dc._apply_fn_to_fields(gather_fn, dataclass_fn)
         lerf_samples = ray_samples._apply_fn_to_fields(gather_fn, dataclass_fn)
 
         if self.training:
