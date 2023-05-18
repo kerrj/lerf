@@ -81,7 +81,7 @@ class LERFModel(NerfactoModel):
         # TODO smoothen this out
         if preset_scales is not None:
             assert len(preset_scales) == len(self.image_encoder.positives)
-            scales_list = torch.as_tensor(preset_scales)
+            scales_list = torch.tensor(preset_scales)
         else:
             scales_list = torch.linspace(0.0, self.config.max_scale, self.config.n_scales)
 

@@ -42,6 +42,7 @@ class FeatureDataloader(ABC):
         self.data = torch.from_numpy(np.load(self.cache_path)).to(self.device)
 
     def save(self):
+        os.makedirs(self.cache_path.parent, exist_ok=True)
         cache_info_path = self.cache_path.with_suffix(".info")
         with open(cache_info_path, "w") as f:
             f.write(json.dumps(self.cfg))
