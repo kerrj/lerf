@@ -42,6 +42,8 @@ class PatchEmbeddingDataloader(FeatureDataloader):
         )
         self.center_x = torch.from_numpy(self.center_x).half()
         self.center_y = torch.from_numpy(self.center_y).half()
+        self.start_x = self.center_x[0].float()
+        self.start_y = self.center_y[0].float()
 
         self.model = model
         self.embed_size = self.model.embedding_dim
@@ -78,8 +80,8 @@ class PatchEmbeddingDataloader(FeatureDataloader):
         img_points = img_points.cpu()
         img_ind, img_points_x, img_points_y = img_points[:, 0], img_points[:, 1], img_points[:, 2]
 
-        x_ind = torch.searchsorted(self.center_x, img_points_x, side="left") - 1
-        y_ind = torch.searchsorted(self.center_y, img_points_y, side="left") - 1
+        x_ind = torch.floor((img_points_x - (self.start_x)) / self.stride).long()
+        y_ind = torch.floor((img_points_y - (self.start_y)) / self.stride).long()
         return self._interp_inds(img_ind, x_ind, y_ind, img_points_x, img_points_y)
 
     def _interp_inds(self, img_ind, x_ind, y_ind, img_points_x, img_points_y):
