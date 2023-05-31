@@ -56,7 +56,7 @@ class LERFPipeline(VanillaPipeline):
             local_rank=local_rank,
             image_encoder=self.image_encoder,
         )
-        self.datamanager.to(device)
+        # self.datamanager.to(device)
 
         # TODO(ethan): get rid of scene_bounds from the model
         assert self.datamanager.train_dataset is not None, "Missing input dataset"
@@ -71,5 +71,8 @@ class LERFPipeline(VanillaPipeline):
 
         self.world_size = world_size
         if world_size > 1:
-            self._model = typing.cast(LERFModel, DDP(self._model, device_ids=[local_rank], find_unused_parameters=True))
+            self._model = typing.cast(
+                LERFModel,
+                DDP(self._model, device_ids=[local_rank], find_unused_parameters=True),
+            )
             dist.barrier(device_ids=[local_rank])
