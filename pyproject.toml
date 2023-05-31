@@ -1,6 +1,6 @@
 [project]
 name = "lerf"
-version = "0.1.0"
+version = "0.1.1"
 
 dependencies=[
     "open_clip_torch",
@@ -9,7 +9,7 @@ dependencies=[
     "regex",
     "tqdm",
     "clip @ git+https://github.com/openai/CLIP.git",
-    "nerfstudio>=0.2.0"
+    "nerfstudio>=0.3.0"
 ]
 
 [tool.setuptools.packages.find]
