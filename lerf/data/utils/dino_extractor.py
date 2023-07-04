@@ -154,7 +154,7 @@ class ViTExtractor:
         #     pil_image = transforms.Resize(load_size, interpolation=transforms.InterpolationMode.LANCZOS)(pil_image)
         prep = transforms.Compose([
             # transforms.ToTensor(),
-            transforms.Resize(load_size),
+            transforms.Resize(load_size, antialias=None),
             transforms.Normalize(mean=self.mean, std=self.std)
         ])
         prep_img = prep(image)[None, ...]

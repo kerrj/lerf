@@ -1,8 +1,9 @@
 import typing
 from dataclasses import dataclass, field
-from typing import Literal, Type
+from typing import Literal, Type, Optional
 
 import torch.distributed as dist
+from torch.cuda.amp.grad_scaler import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from nerfstudio.configs import base_config as cfg
@@ -42,6 +43,7 @@ class LERFPipeline(VanillaPipeline):
         test_mode: Literal["test", "val", "inference"] = "val",
         world_size: int = 1,
         local_rank: int = 0,
+        grad_scaler: Optional[GradScaler] = None,
     ):
         super(VanillaPipeline, self).__init__()
         self.config = config
@@ -66,6 +68,7 @@ class LERFPipeline(VanillaPipeline):
             num_train_data=len(self.datamanager.train_dataset),
             metadata=self.datamanager.train_dataset.metadata,
             image_encoder=self.image_encoder,
+            grad_scaler=grad_scaler,
         )
         self.model.to(device)
 
