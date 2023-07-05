@@ -58,7 +58,9 @@ class LERFField(Field):
 
         self.dino_net = tcnn.Network(
             n_input_dims=tot_out_dims,
-            n_output_dims=384,
+            n_output_dims=64,
+            # n_output_dims=384,
+            # n_output_dims=768,
             network_config={
                 "otype": "CutlassMLP",
                 "activation": "ReLU",

@@ -81,7 +81,8 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
 
         cache_dir = f"outputs/{self.config.dataparser.data.name}"
         clip_cache_path = Path(osp.join(cache_dir, f"clip_{self.image_encoder.name}"))
-        dino_cache_path = Path(osp.join(cache_dir, "dino.npy"))
+        dino_name = DinoDataloader.dino_model_type
+        dino_cache_path = Path(osp.join(cache_dir, f"dino_{dino_name}.npy"))
         # NOTE: cache config is sensitive to list vs. tuple, because it checks for dict equality
         self.dino_dataloader = DinoDataloader(
             image_list=images,

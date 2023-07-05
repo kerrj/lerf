@@ -52,6 +52,8 @@ class LERFModel(NerfactoModel):
             clip_n_dims=self.image_encoder.embedding_dim,
         )
 
+        self.n_clusters = ViewerSlider("n_clusters", 6, 2, 20, 1)
+
         # populate some viewer logic
         # TODO use the values from this code to select the scale
         # def scale_cb(element):
@@ -161,6 +163,19 @@ class LERFModel(NerfactoModel):
                 )
                 outputs["raw_relevancy"] = max_across  # N x B x 1
                 outputs["best_scales"] = best_scales.to(self.device)  # N
+            
+            from fast_pytorch_kmeans import KMeans
+            n_clusters = self.n_clusters.value
+            dino_feats = self.renderer_mean(embeds=lerf_field_outputs[LERFFieldHeadNames.DINO], weights=lerf_weights.detach())
+            kmeans = KMeans(n_clusters=n_clusters, verbose=0)
+            dino_labels = kmeans.fit_predict(dino_feats)
+            dino_labels = dino_labels / dino_labels.max()
+            outputs["dino_kmeans"] = dino_labels[...,None]
+
+            dino_feats_pca = torch.pca_lowrank(dino_feats, q=3)[0]
+            dino_feats_pca = dino_feats_pca - dino_feats_pca.min(dim=0, keepdim=True).values
+            dino_feats_pca = dino_feats_pca / dino_feats_pca.max(dim=0, keepdim=True).values
+            outputs["dino_pca"] = dino_feats_pca
 
         return outputs
 

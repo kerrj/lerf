@@ -46,6 +46,10 @@ class ViTExtractor:
         self.model.eval()
         self.model.to(self.device)
         self.p = self.model.patch_embed.patch_size
+        if type(self.p) is tuple:
+            assert len(self.p) == 2 and self.p[0] == self.p[1], "only square patch sizes are supported"
+            self.p = self.p[0]
+
         self.stride = self.model.patch_embed.proj.stride
 
         self.mean = (0.485, 0.456, 0.406) if "dino" in self.model_type else (0.5, 0.5, 0.5)
@@ -64,7 +68,9 @@ class ViTExtractor:
                            vit_base_patch16_224]
         :return: the model
         """
-        if 'dino' in model_type:
+        if 'dinov2' in model_type:
+            model = torch.hub.load('facebookresearch/dinov2:main', model_type)
+        elif 'dino' in model_type:
             model = torch.hub.load('facebookresearch/dino:main', model_type)
         else:  # model from timm -- load weights from timm to dino model (enables working on arbitrary size images).
             temp_model = timm.create_model(model_type, pretrained=True)
@@ -128,6 +134,9 @@ class ViTExtractor:
         patch_size = model.patch_embed.patch_size
         if stride == patch_size:  # nothing to do
             return model
+        if type(patch_size) == tuple and len(patch_size) == 2:
+            assert patch_size[0] == patch_size[1], f'patch_size {patch_size} should be square'
+            patch_size = patch_size[0]
 
         stride = nn_utils._pair(stride)
         assert all([(patch_size // s_) * s_ == patch_size for s_ in
