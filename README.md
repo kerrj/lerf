@@ -64,7 +64,7 @@ The main file to look at for editing and building off LERF is `lerf.py`, which e
 
 ## Bibtex
 If you find this useful, please cite the paper!
-<pre id="codecell0">@article{lerf2023,
+<pre id="codecell0">@inproceedings{lerf2023,
 &nbsp;author = {Kerr, Justin and Kim, Chung Min and Goldberg, Ken and Kanazawa, Angjoo and Tancik, Matthew},
 &nbsp;title = {LERF: Language Embedded Radiance Fields},
 &nbsp;booktitle = {International Conference on Computer Vision (ICCV)},
