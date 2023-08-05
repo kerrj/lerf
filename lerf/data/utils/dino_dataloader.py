@@ -4,11 +4,15 @@ import torch
 from lerf.data.utils.dino_extractor import ViTExtractor
 from lerf.data.utils.feature_dataloader import FeatureDataloader
 from tqdm import tqdm
+import torchvision.transforms as transforms
 
 
 class DinoDataloader(FeatureDataloader):
     dino_model_type = "dino_vits8"
     dino_stride = 8
+    # # For dinov2, use this:
+    # dino_model_type = "dinov2_vitb14"
+    # dino_stride = 14
     dino_load_size = 500
     dino_layer = 11
     dino_facet = "key"
@@ -23,6 +27,11 @@ class DinoDataloader(FeatureDataloader):
     ):
         assert "image_shape" in cfg
         super().__init__(cfg, device, image_list, cache_path)
+        # Do distillation-preprocessing as noted in N3F:
+        # The features are then L2-normalized and reduced with PCA to 64 dimensions before distillation.
+        data_shape = self.data.shape
+        self.data = self.data / self.data.norm(dim=-1, keepdim=True) 
+        self.data = torch.pca_lowrank(self.data.reshape(-1, data_shape[-1]), q=64)[0].reshape((*data_shape[:-1], 64))
 
     def create(self, image_list):
         extractor = ViTExtractor(self.dino_model_type, self.dino_stride)
@@ -30,6 +39,12 @@ class DinoDataloader(FeatureDataloader):
 
         dino_embeds = []
         for image in tqdm(preproc_image_lst, desc="dino", total=len(image_list), leave=False):
+            # image nees to be resized s.t. H, W are divisible by dino_stride
+            if "dinov2" in self.dino_model_type:
+                image = transforms.Resize((
+                    (image.shape[1]//self.dino_stride)*self.dino_stride,
+                    (image.shape[2]//self.dino_stride)*self.dino_stride,
+                    ))(image)
             with torch.no_grad():
                 descriptors = extractor.extract_descriptors(
                     image.unsqueeze(0),
