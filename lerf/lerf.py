@@ -52,32 +52,6 @@ class LERFModel(NerfactoModel):
             clip_n_dims=self.image_encoder.embedding_dim,
         )
 
-        # populate some viewer logic
-        # TODO use the values from this code to select the scale
-        # def scale_cb(element):
-        #     self.config.n_scales = element.value
-
-        # self.n_scale_slider = ViewerSlider("N Scales", 15, 5, 30, 1, cb_hook=scale_cb)
-
-        # def max_cb(element):
-        #     self.config.max_scale = element.value
-
-        # self.max_scale_slider = ViewerSlider("Max Scale", 1.5, 0, 5, 0.05, cb_hook=max_cb)
-
-        # def hardcode_scale_cb(element):
-        #     self.hardcoded_scale = element.value
-
-        # self.hardcoded_scale_slider = ViewerSlider(
-        #     "Hardcoded Scale", 1.0, 0, 5, 0.05, cb_hook=hardcode_scale_cb, disabled=True
-        # )
-
-        # def single_scale_cb(element):
-        #     self.n_scale_slider.set_disabled(element.value)
-        #     self.max_scale_slider.set_disabled(element.value)
-        #     self.hardcoded_scale_slider.set_disabled(not element.value)
-
-        # self.single_scale_box = ViewerCheckbox("Single Scale", False, cb_hook=single_scale_cb)
-
     def get_max_across(self, ray_samples, weights, hashgrid_field, scales_shape, preset_scales=None):
         # TODO smoothen this out
         if preset_scales is not None:
@@ -120,13 +94,16 @@ class LERFModel(NerfactoModel):
             return torch.gather(tens, -2, best_ids.expand(*best_ids.shape[:-1], tens.shape[-1]))
 
         dataclass_fn = lambda dc: dc._apply_fn_to_fields(gather_fn, dataclass_fn)
-        lerf_samples = ray_samples._apply_fn_to_fields(gather_fn, dataclass_fn)
+        lerf_samples: RaySamples = ray_samples._apply_fn_to_fields(gather_fn, dataclass_fn)
 
         if self.training:
-            clip_scales = ray_bundle.metadata["clip_scales"]
-            clip_scales = clip_scales[..., None]
-            dist = lerf_samples.spacing_to_euclidean_fn(lerf_samples.spacing_starts.squeeze(-1)).unsqueeze(-1)
-            clip_scales = clip_scales * ray_bundle.metadata["width"] * (1 / ray_bundle.metadata["fx"]) * dist
+            with torch.no_grad():
+                clip_scales = ray_bundle.metadata["clip_scales"]
+                clip_scales = clip_scales[..., None]
+                dist = (lerf_samples.frustums.get_positions() - ray_bundle.origins[:, None, :]).norm(
+                    dim=-1, keepdim=True
+                )
+            clip_scales = clip_scales * ray_bundle.metadata["height"] * (dist / ray_bundle.metadata["fy"])
         else:
             clip_scales = torch.ones_like(lerf_samples.spacing_starts, device=self.device)
 
