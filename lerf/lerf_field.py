@@ -3,9 +3,9 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import torch
 from lerf.lerf_fieldheadnames import LERFFieldHeadNames
-from torch import nn
+from torch import nn, Tensor
 from torch.nn.parameter import Parameter
-from torchtyping import TensorType
+from jaxtyping import Float
 
 from nerfstudio.cameras.rays import RaySamples
 from nerfstudio.data.scene_box import SceneBox
@@ -39,7 +39,8 @@ class LERFField(Field):
             [
                 LERFField._get_encoding(
                     grid_resolutions[i][0], grid_resolutions[i][1], grid_layers[i], indim=3, hash_size=grid_sizes[i]
-                ) for i in range(len(grid_layers))
+                )
+                for i in range(len(grid_layers))
             ]
         )
         tot_out_dims = sum([e.n_output_dims for e in self.clip_encs])
@@ -84,7 +85,7 @@ class LERFField(Field):
         )
         return enc
 
-    def get_outputs(self, ray_samples: RaySamples, clip_scales) -> Dict[LERFFieldHeadNames, TensorType]:
+    def get_outputs(self, ray_samples: RaySamples, clip_scales) -> Dict[LERFFieldHeadNames, Float[Tensor, "bs dim"]]:
         # random scales, one scale
         outputs = {}
 

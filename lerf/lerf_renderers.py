@@ -1,6 +1,7 @@
 import torch
-from torch import nn
-from torchtyping import TensorType
+from torch import nn, Tensor
+from jaxtyping import Float
+
 
 class CLIPRenderer(nn.Module):
     """Calculate CLIP embeddings along ray."""
@@ -8,9 +9,9 @@ class CLIPRenderer(nn.Module):
     @classmethod
     def forward(
         cls,
-        embeds: TensorType["bs":..., "num_samples", "num_classes"],
-        weights: TensorType["bs":..., "num_samples", 1],
-    ) -> TensorType["bs":..., "num_classes"]:
+        embeds: Float[Tensor, "bs num_samples num_classes"],
+        weights: Float[Tensor, "bs num_samples 1"],
+    ) -> Float[Tensor, "bs num_classes"]:
         """Calculate semantics along the ray."""
         output = torch.sum(weights * embeds, dim=-2)
         output = output / torch.linalg.norm(output, dim=-1, keepdim=True)
@@ -23,9 +24,9 @@ class MeanRenderer(nn.Module):
     @classmethod
     def forward(
         cls,
-        embeds: TensorType["bs":..., "num_samples", "num_classes"],
-        weights: TensorType["bs":..., "num_samples", 1],
-    ) -> TensorType["bs":..., "num_classes"]:
+        embeds: Float[Tensor, "bs num_samples num_classes"],
+        weights: Float[Tensor, "bs num_samples 1"],
+    ) -> Float[Tensor, "bs num_classes"]:
         """Calculate semantics along the ray."""
         output = torch.sum(weights * embeds, dim=-2)
         return output
