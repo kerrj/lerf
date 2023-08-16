@@ -118,4 +118,6 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
         # assume all cameras have the same focal length and image width
         ray_bundle.metadata["fx"] = self.train_dataset.cameras[0].fx.item()
         ray_bundle.metadata["width"] = self.train_dataset.cameras[0].width.item()
+        ray_bundle.metadata["fy"] = self.train_dataset.cameras[0].fy.item()
+        ray_bundle.metadata["height"] = self.train_dataset.cameras[0].height.item()
         return ray_bundle, batch
