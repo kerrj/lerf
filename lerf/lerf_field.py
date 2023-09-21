@@ -21,6 +21,10 @@ try:
     import tinycudann as tcnn
 except ImportError:
     pass
+except EnvironmentError as _exp:
+    if "Unknown compute capability" not in _exp.args[0]:
+        raise _exp
+    print("Could not load tinycudann: " + str(_exp), file=sys.stderr)
 
 
 class LERFField(Field):
