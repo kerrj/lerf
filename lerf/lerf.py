@@ -20,6 +20,7 @@ from lerf.encoders.image_encoder import BaseImageEncoder
 from lerf.lerf_field import LERFField
 from lerf.lerf_fieldheadnames import LERFFieldHeadNames
 from lerf.lerf_renderers import CLIPRenderer, MeanRenderer
+from lerf.utils.kmeans import kmeans, kmeans_predict, hungarian_matching
 
 
 @dataclass
@@ -123,9 +124,11 @@ class LERFModel(NerfactoModel):
             outputs["clip"] = self.renderer_clip(
                 embeds=lerf_field_outputs[LERFFieldHeadNames.CLIP], weights=lerf_weights.detach()
             )
+            # outputs["clip"] = kmeans(outputs["clip"].reshape(-1, outputs["clip"].shape[-1]), 4, distance="cosine", device=self.device).reshape(outputs["clip"].shape)
             outputs["dino"] = self.renderer_mean(
                 embeds=lerf_field_outputs[LERFFieldHeadNames.DINO], weights=lerf_weights.detach()
             )
+            # outputs["dino"] = kmeans(outputs["dino"].reshape(-1, outputs["dino"].shape[-1]), 4, distance="cosine", device=self.device).reshape(outputs["dino"].shape)
 
         if not self.training:
             with torch.no_grad():
@@ -176,6 +179,11 @@ class LERFModel(NerfactoModel):
             end_idx = i + num_rays_per_chunk
             ray_bundle = camera_ray_bundle.get_row_major_sliced_ray_bundle(start_idx, end_idx)
             ray_bundle.metadata["override_scales"] = best_scales
+            # normalize ray bundle
+            # norm_ray_bundle = ray_bundle.origins - ray_bundle.origins.mean(dim=0, keepdim=True)
+            # norm_ray_bundle = norm_ray_bundle / norm_ray_bundle.norm(dim=-1, keepdim=True)
+            norm_ray_bundle = ray_bundle
+            ray_bundle = kmeans(norm_ray_bundle.reshape(-1, norm_ray_bundle.shape[-1]), 4, distance="cosine", device=self.device).reshape(norm_ray_bundle.shape)
             outputs = self.forward(ray_bundle=ray_bundle)
             # standard nerfstudio concatting
             for output_name, output in outputs.items():  # type: ignore
@@ -184,6 +192,7 @@ class LERFModel(NerfactoModel):
                 if output_name == "raw_relevancy":
                     for r_id in range(output.shape[0]):
                         outputs_lists[f"relevancy_{r_id}"].append(output[r_id, ...])
+                # if output_name == "clip":
                 else:
                     outputs_lists[output_name].append(output)
         outputs = {}
@@ -200,17 +209,30 @@ class LERFModel(NerfactoModel):
         return outputs
 
     def _get_outputs_nerfacto(self, ray_samples: RaySamples):
+        lerf_samples = ray_samples
+        clip_scales = torch.ones_like(ray_samples.spacing_starts, device=self.device)
+        lerf_field_outputs = self.lerf_field.get_outputs(lerf_samples, clip_scales)
         field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
         weights = ray_samples.get_weights(field_outputs[FieldHeadNames.DENSITY])
 
         rgb = self.renderer_rgb(rgb=field_outputs[FieldHeadNames.RGB], weights=weights)
         depth = self.renderer_depth(weights=weights, ray_samples=ray_samples)
         accumulation = self.renderer_accumulation(weights=weights)
+        # add feature map for visualization
+        clip_feature_map = self.renderer_clip(
+            embeds=lerf_field_outputs[LERFFieldHeadNames.CLIP], weights=weights.detach()
+        )
+        dino_feature_map = self.renderer_mean(
+            embeds=lerf_field_outputs[LERFFieldHeadNames.DINO], weights=weights.detach()
+        )
 
         outputs = {
             "rgb": rgb,
             "accumulation": accumulation,
             "depth": depth,
+            # add feature map for visualization
+            "clip_feature": clip_feature_map,
+            "dino_feature": dino_feature_map,
         }
 
         return field_outputs, outputs, weights
