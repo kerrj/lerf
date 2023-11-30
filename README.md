@@ -9,7 +9,7 @@ This is the official implementation for [LERF](https://lerf.io).
 # Installation
 LERF follows the integration guidelines described [here](https://docs.nerf.studio/en/latest/developer_guides/new_methods.html) for custom methods within Nerfstudio. 
 ### 0. Install Nerfstudio dependencies
-[Follow these instructions](https://docs.nerf.studio/en/latest/quickstart/installation.html) up to and including "tinycudann" to install dependencies and create an environment
+[Follow these instructions](https://docs.nerf.studio/quickstart/installation.html) up to and including "tinycudann" to install dependencies and create an environment
 ### 1. Clone this repo
 `git clone https://github.com/kerrj/lerf`
 ### 2. Install this repo as a python package
