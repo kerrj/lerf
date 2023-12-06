@@ -9,7 +9,7 @@ This is the official implementation for [LERF](https://lerf.io).
 # Installation
 LERF follows the integration guidelines described [here](https://docs.nerf.studio/en/latest/developer_guides/new_methods.html) for custom methods within Nerfstudio. 
 ### 0. Install Nerfstudio dependencies
-[Follow these instructions](https://docs.nerf.studio/en/latest/quickstart/installation.html) up to and including "tinycudann" to install dependencies and create an environment
+[Follow these instructions](https://docs.nerf.studio/quickstart/installation.html) up to and including "tinycudann" to install dependencies and create an environment
 ### 1. Clone this repo
 `git clone https://github.com/kerrj/lerf`
 ### 2. Install this repo as a python package
@@ -23,7 +23,7 @@ Run `ns-train -h`: you should see a list of "subcommands" with lerf, lerf-big, a
 # Using LERF
 Now that LERF is installed you can play with it! 
 
-- Launch training with `ns-train lerf --data <data_folder>`. This specifies a data folder to use. For more details, see [Nerfstudio documentation](https://docs.nerf.studio/en/latest/quickstart/first_nerf.html). 
+- Launch training with `ns-train lerf --data <data_folder>`. This specifies a data folder to use. For more details, see [Nerfstudio documentation](https://docs.nerf.studio/quickstart/first_nerf.html). 
 - Connect to the viewer by forwarding the viewer port (we use VSCode to do this), and click the link to `viewer.nerf.studio` provided in the output of the train script
 - Within the viewer, you can type text into the textbox, then select the `relevancy_0` output type to visualize relevancy maps.
 
