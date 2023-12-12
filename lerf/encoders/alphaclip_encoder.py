@@ -5,42 +5,34 @@ import torch
 import torchvision
 
 try:
-    import clip
+    import alpha_clip
 except ImportError:
-    assert False, "clip is not installed, install it with `pip install clip`"
+    assert False, "alpha_clip is not installed, install it with https://github.com/SunzeY/AlphaCLIP"
 
 from lerf.encoders.image_encoder import (BaseImageEncoder, BaseImageEncoderConfig)
 from nerfstudio.viewer.server.viewer_elements import ViewerText
 
-
 @dataclass
 class CLIPNetworkConfig(BaseImageEncoderConfig):
-    _target: Type = field(default_factory=lambda: CLIPNetwork)
+    _target: Type = field(default_factory=lambda: AlphaCLIPNetworkConfig)
     clip_model_type: str = "ViT-B/16"
     clip_n_dims: int = 512
     negatives: Tuple[str] = ("object", "things", "stuff", "texture")
 
 
-class CLIPNetwork(BaseImageEncoder):
+class AlphaCLIPNetworkConfig(BaseImageEncoder):
     def __init__(self, config: CLIPNetworkConfig):
         super().__init__()
         self.config = config
-        self.process = torchvision.transforms.Compose(
-            [
-                torchvision.transforms.Resize((224, 224)),
-                torchvision.transforms.Normalize(
-                    mean=[0.48145466, 0.4578275, 0.40821073],
-                    std=[0.26862954, 0.26130258, 0.27577711],
-                ),
-            ]
-        )
-        model, _ = clip.load(self.config.clip_model_type)
+
+        model, preprocess = alpha_clip.load("ViT-B/16", alpha_vision_ckpt_pth="/home/ahojel/project/lerf/alpha_clip/clip_b16_grit+mim_fultune_4xe.pth", lora_adapt=False, rank=-1)
+ 
+        self.process = preprocess
+
         model.eval()
-        self.tokenizer = clip.tokenize
+        self.tokenizer = alpha_clip.tokenize
         self.model = model.to("cuda")
         self.clip_n_dims = self.config.clip_n_dims
-
-        #print(f'model params: {get_n_params(self.model)}')
 
         self.positive_input = ViewerText("LERF Positives", "", cb_hook=self.gui_cb)
 
@@ -63,7 +55,7 @@ class CLIPNetwork(BaseImageEncoder):
 
     @property
     def name(self) -> str:
-        return "clip_openai_{}".format(self.config.clip_model_type)
+        return "alphaclip_{}".format(self.config.clip_model_type)
 
     @property
     def embedding_dim(self) -> int:
@@ -94,6 +86,23 @@ class CLIPNetwork(BaseImageEncoder):
             :, 0, :
         ]
 
-    def encode_image(self, input):
-        processed_input = self.process(input).half()
-        return self.model.encode_image(processed_input)
+    def encode_image(self, input_image, input_binary_mask):
+        # Transformation for the masks
+        mask_transform = torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor(), 
+            torchvision.transforms.Resize((224, 224)), 
+            torchvision.transforms.Normalize(0.5, 0.26)
+        ])
+
+        # Apply the transformation to the entire batch of masks
+        # Stack the masks to create a batch and multiply by 255
+        masks_batch = torch.stack([mask_transform(mask * 255) for mask in input_binary_mask])
+
+        # Unsqueeze the input_image to add the batch dimension and repeat it for each mask
+        input_image_batch = input_image.unsqueeze(0).repeat(masks_batch.size(0), 1, 1, 1)
+
+        # Send the batched images and masks to the model
+        # Assuming the model can handle batched inputs
+        output = self.model.visual(input_image_batch.to("cuda"), masks_batch.to("cuda").half())
+
+        return output

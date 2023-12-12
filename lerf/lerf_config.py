@@ -17,6 +17,7 @@ from lerf.lerf_pipeline import LERFPipelineConfig
 """
 Swap out the network config to use OpenCLIP or CLIP here.
 """
+from lerf.encoders.alphaclip_encoder import AlphaCLIPNetworkConfig
 from lerf.encoders.clip_encoder import CLIPNetworkConfig
 from lerf.encoders.openclip_encoder import OpenCLIPNetworkConfig
 
@@ -44,13 +45,13 @@ lerf_method = MethodSpecification(
                 hashgrid_resolutions=((16, 128), (128, 512)),
                 num_lerf_samples=24,
             ),
-            network=OpenCLIPNetworkConfig(
-                clip_model_type="ViT-B-16", clip_model_pretrained="laion2b_s34b_b88k", clip_n_dims=512
-            ),
+            #network=OpenCLIPNetworkConfig(
+            #    clip_model_type="ViT-B-16", clip_model_pretrained="laion2b_s34b_b88k", clip_n_dims=512
+            #),
             #  You can swap the type of input encoder by specifying different NetworkConfigs, the one below uses OpenAI CLIP, the one above uses OpenCLIP
-            # network=CLIPNetworkConfig(
-            #     clip_model_type="ViT-B/16", clip_n_dims=512
-            # )
+            network=AlphaCLIPNetworkConfig(
+                 clip_model_type="ViT-B/16", clip_n_dims=512
+            )
         ),
         optimizers={
             "proposal_networks": {
@@ -119,9 +120,10 @@ lerf_method_big = MethodSpecification(
     description="A larger version of LERF with a higher memory footprint, bigger CLIP model, and more hashgrid capacity",
 )
 
+
 lerf_method_lite = MethodSpecification(
     config=TrainerConfig(
-        method_name="lerf-lite",
+        method_name="lerf-clip",
         steps_per_eval_batch=500,
         steps_per_save=2000,
         max_num_iterations=30000,
@@ -137,14 +139,16 @@ lerf_method_lite = MethodSpecification(
             ),
             model=LERFModelConfig(
                 eval_num_rays_per_chunk=1 << 15,
-                hashgrid_sizes=(19,),
-                hashgrid_layers=(16,),
-                hashgrid_resolutions=((16, 512),),
-                num_lerf_samples=12,
+                # NOTE: exceeding 16 layers per hashgrid causes a segfault within Tiny CUDA NN, so instead we compose multiple hashgrids together
+                hashgrid_sizes=(19, 19),
+                hashgrid_layers=(12, 12),
+                hashgrid_resolutions=((16, 128), (128, 512)),
+                num_lerf_samples=24,
             ),
-            network=OpenCLIPNetworkConfig(
-                clip_model_type="ViT-B-16", clip_model_pretrained="laion2b_s34b_b88k", clip_n_dims=512
-            ),
+
+            network=CLIPNetworkConfig(
+                 clip_model_type="ViT-B/16", clip_n_dims=512
+            )
         ),
         optimizers={
             "proposal_networks": {
@@ -157,11 +161,11 @@ lerf_method_lite = MethodSpecification(
             },
             "lerf": {
                 "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
-                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=7000),
+                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=4000),
             },
         },
         viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
         vis="viewer",
     ),
-    description="A lightweight version of LERF designed to work on smaller GPUs",
+    description="Base config for LERF",
 )
