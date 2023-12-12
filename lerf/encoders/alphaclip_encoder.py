@@ -13,15 +13,15 @@ from lerf.encoders.image_encoder import (BaseImageEncoder, BaseImageEncoderConfi
 from nerfstudio.viewer.server.viewer_elements import ViewerText
 
 @dataclass
-class CLIPNetworkConfig(BaseImageEncoderConfig):
-    _target: Type = field(default_factory=lambda: AlphaCLIPNetworkConfig)
+class AlphaCLIPNetworkConfig(BaseImageEncoderConfig):
+    _target: Type = field(default_factory=lambda: AlphaCLIPNetwork)
     clip_model_type: str = "ViT-B/16"
     clip_n_dims: int = 512
     negatives: Tuple[str] = ("object", "things", "stuff", "texture")
 
 
-class AlphaCLIPNetworkConfig(BaseImageEncoder):
-    def __init__(self, config: CLIPNetworkConfig):
+class AlphaCLIPNetwork(BaseImageEncoder):
+    def __init__(self, config: AlphaCLIPNetworkConfig):
         super().__init__()
         self.config = config
 
