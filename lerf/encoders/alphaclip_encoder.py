@@ -25,7 +25,7 @@ class AlphaCLIPNetwork(BaseImageEncoder):
         super().__init__()
         self.config = config
 
-        model, preprocess = alpha_clip.load("ViT-B/16", alpha_vision_ckpt_pth="/home/ahojel/project/lerf/alpha_clip/clip_b16_grit+mim_fultune_4xe.pth", lora_adapt=False, rank=-1)
+        model, preprocess = alpha_clip.load("ViT-B/16", alpha_vision_ckpt_pth="/rscratch/rtabrizi/lerf/weights/clip_b16_grit+mim_fultune_4xe.pth", lora_adapt=False, rank=-1)
  
         self.process = preprocess
 
@@ -94,11 +94,9 @@ class AlphaCLIPNetwork(BaseImageEncoder):
             torchvision.transforms.Normalize(0.5, 0.26)
         ])
 
-        # Apply the transformation to the entire batch of masks
-        # Stack the masks to create a batch and multiply by 255
+
         masks_batch = torch.stack([mask_transform(mask * 255) for mask in input_binary_mask])
 
-        # Unsqueeze the input_image to add the batch dimension and repeat it for each mask
         input_image_batch = input_image.unsqueeze(0).repeat(masks_batch.size(0), 1, 1, 1)
 
         # Send the batched images and masks to the model

@@ -4,13 +4,13 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from lerf.data.utils.feature_dataloader import FeatureDataloader
-from lerf.data.utils.patch_embedding_dataloader import PatchEmbeddingDataloader
-from lerf.encoders.image_encoder import BaseImageEncoder
+from nerfstudio.data.utils.feature_dataloader import FeatureDataloader
+from lerf.data.utils.mask_embedding_dataloader import MaskEmbeddingDataloader
+from nerfstudio.encoders.image_encoder import BaseImageEncoder
 from tqdm import tqdm
 
 
-class PyramidEmbeddingDataloader(FeatureDataloader):
+class AlphaPyramidEmbeddingDataloader(FeatureDataloader):
     def __init__(
         self,
         cfg: dict,
@@ -64,7 +64,7 @@ class PyramidEmbeddingDataloader(FeatureDataloader):
         os.makedirs(self.cache_path, exist_ok=True)
         for i, tr in enumerate(tqdm(self.tile_sizes, desc="Scales")):
             stride_scaler = self.strider_scaler_list[i]
-            self.data_dict[i] = PatchEmbeddingDataloader(
+            self.data_dict[i] = MaskEmbeddingDataloader(
                 cfg={
                     "tile_ratio": tr.item(),
                     "stride_ratio": stride_scaler,
@@ -76,6 +76,7 @@ class PyramidEmbeddingDataloader(FeatureDataloader):
                 image_list=image_list,
                 cache_path=Path(f"{self.cache_path}/level_{i}.npy"),
             )
+            print(image_list.shape)
 
     def save(self):
         cache_info_path = self.cache_path.with_suffix(".info")
@@ -107,6 +108,7 @@ class PyramidEmbeddingDataloader(FeatureDataloader):
         )
 
     def _uniform_scales(self, img_points, scale):
+        # img_points: (B, 3) # (img_ind, x, y)
         scale_bin = torch.floor(
             (scale - self.tile_sizes[0]) / (self.tile_sizes[-1] - self.tile_sizes[0]) * (self.tile_sizes.shape[0] - 1)
         ).to(torch.int64)

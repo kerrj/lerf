@@ -25,7 +25,7 @@ from lerf.lerf_renderers import CLIPRenderer, MeanRenderer
 @dataclass
 class LERFModelConfig(NerfactoModelConfig):
     _target: Type = field(default_factory=lambda: LERFModel)
-    clip_loss_weight: float = 0.1
+    clip_loss_weight: float = 0.1 # regularization
     n_scales: int = 30
     max_scale: float = 1.5
     """maximum scale used to compute relevancy with"""
@@ -177,7 +177,6 @@ class LERFModel(NerfactoModel):
             ray_bundle = camera_ray_bundle.get_row_major_sliced_ray_bundle(start_idx, end_idx)
             ray_bundle.metadata["override_scales"] = best_scales
             outputs = self.forward(ray_bundle=ray_bundle)
-            # standard nerfstudio concatting
             for output_name, output in outputs.items():  # type: ignore
                 if output_name == "best_scales":
                     continue

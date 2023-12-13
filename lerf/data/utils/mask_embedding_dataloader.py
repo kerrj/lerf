@@ -106,39 +106,61 @@ class MaskEmbeddingDataloader(FeatureDataloader):
         return torch.lerp(top, bot, bot_w[:, None])
     
     def _create_binary_masks_vectorized(self, image_shape):
-        """
-        Create a binary mask for each tile to indicate its occupancy in the original image.
-        Vectorized for performance.
-        """
+        """ From presentation. Alpha is the tile, but we pass in the entire image for all masks. hence only returning masks"""
         image_h, image_w = image_shape
         kernel_size = self.kernel_size
         stride = self.stride
         padding = self.padding
-        # Calculate padded image dimensions
+
         padded_h = image_h + 2 * padding
         padded_w = image_w + 2 * padding
 
-        # Generate a grid of coordinates for the padded image
         grid_y, grid_x = torch.meshgrid(torch.arange(padded_h), torch.arange(padded_w), indexing='ij')
 
-        # Calculate the coordinates of the top-left corner of each window
         window_tops_y = torch.arange(0, padded_h - kernel_size + 1, stride)
         window_tops_x = torch.arange(0, padded_w - kernel_size + 1, stride)
 
-        # Create a list to hold the masks
         masks = []
 
-        # Determine which grid points fall within each window
         for y in window_tops_y:
             for x in window_tops_x:
                 mask = (grid_y >= y) & (grid_y < y + kernel_size) & (grid_x >= x) & (grid_x < x + kernel_size).int()
 
-                # Remove padding from the mask
                 mask = mask[padding:-padding, padding:-padding] if padding > 0 else mask
                 masks.append(mask)
 
-        # Stack the masks into a single tensor
         return torch.stack(masks)
+    
+    def _create_binary_masks_vectorized2(self, image):
+        "each kernel increases in size by 50%, we then set alpha to be the original kernel size. We later embed the padded alpha on top of the kernel"
+        image_h, image_w = image.shape[:2]
+        original_kernel_size = self.kernel_size
+        kernel_size = int(1.5 * original_kernel_size)
+        stride = self.stride
+        padding = self.padding
+
+        padded_h = image_h + 2 * padding
+        padded_w = image_w + 2 * padding
+
+        grid_y, grid_x = torch.meshgrid(torch.arange(padded_h), torch.arange(padded_w), indexing='ij')
+
+        window_tops_y = torch.arange(0, padded_h - original_kernel_size + 1, stride)
+        window_tops_x = torch.arange(0, padded_w - original_kernel_size + 1, stride)
+
+        masks = []
+        kernel_slices = []
+
+        for y in window_tops_y:
+            for x in window_tops_x:
+                mask = (grid_y >= y) & (grid_y < y + original_kernel_size) & \
+                    (grid_x >= x) & (grid_x < x + original_kernel_size).int()
+                kernel_image_slice = image[y:y+kernel_size, x:x+kernel_size, :]
+                mask = mask[padding:-padding, padding:-padding] if padding > 0 else mask
+                masks.append(mask)
+                kernel_slices.append(kernel_image_slice)
+
+        return torch.stack(masks), torch.stack(kernel_slices)
+    
 
     def _embed_clip_tiles(self, image, unfold_func):
         # image augmentation: slow-ish (0.02s for 600x800 image per augmentation)
@@ -148,12 +170,21 @@ class MaskEmbeddingDataloader(FeatureDataloader):
 
         # breakpoint()
 
-        binary_masks_of_tiles = self._create_binary_masks_vectorized(image.shape[-2:])
+        kernels, masks = self._create_binary_masks_vectorized2(image)
 
         #display_image = image[0].permute(1, 2, 0).cpu().numpy() # Adjust if needed
 
+        
+        with torch.no_grad():
+            processed_images = self.model.process(kernels).half().to(self.device)
+            clip_embeds = self.model.encode_image(processed_images, masks.numpy().astype(float))
+        clip_embeds /= clip_embeds.norm(dim=-1, keepdim=True)
 
-        # for i in range(tiles.shape[0]):
+        clip_embeds = clip_embeds.reshape((self.center_x.shape[0], self.center_y.shape[0], -1))
+        clip_embeds = torch.concat((clip_embeds, clip_embeds[:, [-1], :]), dim=1)
+        clip_embeds = torch.concat((clip_embeds, clip_embeds[[-1], :, :]), dim=0)
+        return clip_embeds.detach().cpu().numpy()
+    # for i in range(tiles.shape[0]):
         #     current_tile = tiles[i].cpu().numpy().transpose(1, 2, 0)  # Adjust if needed
         #     current_mask = binary_masks_of_tiles[i].cpu().numpy()
 
@@ -185,12 +216,7 @@ class MaskEmbeddingDataloader(FeatureDataloader):
 
         #     breakpoint()
 
-        with torch.no_grad():
-            processed_image = self.model.process(T.ToPILImage()(image[0])).half().to(self.device)
-            clip_embeds = self.model.encode_image(processed_image, binary_masks_of_tiles.numpy().astype(float))
-        clip_embeds /= clip_embeds.norm(dim=-1, keepdim=True)
+    import torch
 
-        clip_embeds = clip_embeds.reshape((self.center_x.shape[0], self.center_y.shape[0], -1))
-        clip_embeds = torch.concat((clip_embeds, clip_embeds[:, [-1], :]), dim=1)
-        clip_embeds = torch.concat((clip_embeds, clip_embeds[[-1], :, :]), dim=0)
-        return clip_embeds.detach().cpu().numpy()
+    
+
