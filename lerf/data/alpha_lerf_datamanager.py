@@ -42,7 +42,7 @@ from nerfstudio.data.datamanagers.base_datamanager import VanillaDataManager, Va
 @dataclass
 class AlphaLERFDataManagerConfig(VanillaDataManagerConfig):
     _target: Type = field(default_factory=lambda: AlphaLERFDataManager)
-    patch_tile_size_range: Tuple[int, int] = (0.05, 0.5)
+    patch_tile_size_range: Tuple[int, int] = (0.1, 0.6)
     patch_tile_size_res: int = 7
     patch_stride_scaler: float = 0.5
 

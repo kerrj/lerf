@@ -184,6 +184,27 @@ class MaskEmbeddingDataloader(FeatureDataloader):
         clip_embeds = torch.concat((clip_embeds, clip_embeds[:, [-1], :]), dim=1)
         clip_embeds = torch.concat((clip_embeds, clip_embeds[[-1], :, :]), dim=0)
         return clip_embeds.detach().cpu().numpy()
+    
+    def mask_for_tile(tile):
+        mask = torch.zeros_like(tile)
+        mask[0.25 * tile.shape[0]:0.75 * tile.shape[0], 0.25 * tile.shape[1]:0.75 * tile.shape[1], :] = 1
+        return mask
+    def _embed_clip_tiles(self, image, unfold_func):
+        # image augmentation: slow-ish (0.02s for 600x800 image per augmentation)
+        aug_imgs = torch.cat([image])
+
+        tiles = unfold_func(aug_imgs).permute(2, 0, 1).reshape(-1, 3, self.kernel_size, self.kernel_size).to("cuda")
+        masks = torch.cat([self.mask_for_tile(tile) for tile in tiles])
+
+        with torch.no_grad():
+            processed_images = self.model.process(tiles).half().to(self.device)
+            clip_embeds = self.model.encode_image(processed_images, masks.numpy().astype(float))
+        clip_embeds /= clip_embeds.norm(dim=-1, keepdim=True)
+
+        clip_embeds = clip_embeds.reshape((self.center_x.shape[0], self.center_y.shape[0], -1))
+        clip_embeds = torch.concat((clip_embeds, clip_embeds[:, [-1], :]), dim=1)
+        clip_embeds = torch.concat((clip_embeds, clip_embeds[[-1], :, :]), dim=0)
+        return clip_embeds.detach().cpu().numpy()
     # for i in range(tiles.shape[0]):
         #     current_tile = tiles[i].cpu().numpy().transpose(1, 2, 0)  # Adjust if needed
         #     current_mask = binary_masks_of_tiles[i].cpu().numpy()

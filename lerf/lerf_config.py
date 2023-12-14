@@ -124,7 +124,7 @@ lerf_method_big = MethodSpecification(
         max_num_iterations=30000,
         mixed_precision=True,
         pipeline=LERFPipelineConfig(
-            datamanager=LERFDataManagerConfig(
+            datamanager=AlphaLERFDataManagerConfig(
                 dataparser=NerfstudioDataParserConfig(train_split_fraction=0.99),
                 train_num_rays_per_batch=4096,
                 eval_num_rays_per_batch=4096,
@@ -136,13 +136,13 @@ lerf_method_big = MethodSpecification(
                 eval_num_rays_per_chunk=1 << 15,
                 # NOTE: exceeding 16 layers per hashgrid causes a segfault within Tiny CUDA NN, so instead we compose multiple hashgrids together
                 hashgrid_sizes=(19, 19),
-                hashgrid_layers=(16, 16),
+                hashgrid_layers=(12, 12),
                 hashgrid_resolutions=((16, 128), (128, 512)),
-                num_lerf_samples=32,
+                num_lerf_samples=24,
             ),
-            network=OpenCLIPNetworkConfig(
-                clip_model_type="ViT-L-14", clip_model_pretrained="laion2b_s32b_b82k", clip_n_dims=768
-            ),
+            network=AlphaCLIPNetworkConfig(
+                clip_n_dims=512
+            )
         ),
         optimizers={
             "proposal_networks": {
@@ -155,13 +155,13 @@ lerf_method_big = MethodSpecification(
             },
             "lerf": {
                 "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
-                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=3000),
+                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=4000),
             },
         },
         viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
         vis="viewer",
     ),
-    description="Alpha CLIP LERF",
+    description="LERF with Alpha CLIP",
 )
 
 
