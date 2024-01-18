@@ -32,9 +32,6 @@ lerf_method = MethodSpecification(
                 dataparser=NerfstudioDataParserConfig(train_split_fraction=0.99),
                 train_num_rays_per_batch=4096,
                 eval_num_rays_per_batch=4096,
-                camera_optimizer=CameraOptimizerConfig(
-                    mode="SO3xR3", optimizer=AdamOptimizerConfig(lr=6e-4, eps=1e-8, weight_decay=1e-2)
-                ),
             ),
             model=LERFModelConfig(
                 eval_num_rays_per_chunk=1 << 15,
@@ -65,6 +62,12 @@ lerf_method = MethodSpecification(
                 "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=4000),
             },
+            "camera_opt": {
+                "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+                "scheduler": ExponentialDecaySchedulerConfig(
+                    lr_final=1e-4, max_steps=5000
+                ),
+            },
         },
         viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
         vis="viewer",
@@ -83,9 +86,6 @@ lerf_method_big = MethodSpecification(
                 dataparser=NerfstudioDataParserConfig(train_split_fraction=0.99),
                 train_num_rays_per_batch=4096,
                 eval_num_rays_per_batch=4096,
-                camera_optimizer=CameraOptimizerConfig(
-                    mode="SO3xR3", optimizer=AdamOptimizerConfig(lr=6e-4, eps=1e-8, weight_decay=1e-2)
-                ),
             ),
             model=LERFModelConfig(
                 eval_num_rays_per_chunk=1 << 15,
@@ -112,6 +112,12 @@ lerf_method_big = MethodSpecification(
                 "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=3000),
             },
+            "camera_opt": {
+                "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+                "scheduler": ExponentialDecaySchedulerConfig(
+                    lr_final=1e-4, max_steps=5000
+                ),
+            },
         },
         viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
         vis="viewer",
@@ -131,9 +137,6 @@ lerf_method_lite = MethodSpecification(
                 dataparser=NerfstudioDataParserConfig(train_split_fraction=0.99),
                 train_num_rays_per_batch=4096,
                 eval_num_rays_per_batch=4096,
-                camera_optimizer=CameraOptimizerConfig(
-                    mode="SO3xR3", optimizer=AdamOptimizerConfig(lr=6e-4, eps=1e-8, weight_decay=1e-2)
-                ),
             ),
             model=LERFModelConfig(
                 eval_num_rays_per_chunk=1 << 15,
@@ -158,6 +161,12 @@ lerf_method_lite = MethodSpecification(
             "lerf": {
                 "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=7000),
+            },
+            "camera_opt": {
+                "optimizer": AdamOptimizerConfig(lr=1e-3, eps=1e-15),
+                "scheduler": ExponentialDecaySchedulerConfig(
+                    lr_final=1e-4, max_steps=5000
+                ),
             },
         },
         viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
