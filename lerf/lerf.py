@@ -119,13 +119,12 @@ class LERFModel(NerfactoModel):
 
         lerf_field_outputs = self.lerf_field.get_outputs(lerf_samples, clip_scales)
 
-        if self.training:
-            outputs["clip"] = self.renderer_clip(
-                embeds=lerf_field_outputs[LERFFieldHeadNames.CLIP], weights=lerf_weights.detach()
-            )
-            outputs["dino"] = self.renderer_mean(
-                embeds=lerf_field_outputs[LERFFieldHeadNames.DINO], weights=lerf_weights.detach()
-            )
+        outputs["clip"] = self.renderer_clip(
+            embeds=lerf_field_outputs[LERFFieldHeadNames.CLIP], weights=lerf_weights.detach()
+        )
+        outputs["dino"] = self.renderer_mean(
+            embeds=lerf_field_outputs[LERFFieldHeadNames.DINO], weights=lerf_weights.detach()
+        )
 
         if not self.training:
             with torch.no_grad():
