@@ -25,7 +25,7 @@ from lerf.lerf_renderers import CLIPRenderer, MeanRenderer
 @dataclass
 class LERFModelConfig(NerfactoModelConfig):
     _target: Type = field(default_factory=lambda: LERFModel)
-    clip_loss_weight: float = 0.1
+    clip_loss_weight: float = 0.1 # regularization
     n_scales: int = 30
     max_scale: float = 1.5
     """maximum scale used to compute relevancy with"""
@@ -176,7 +176,6 @@ class LERFModel(NerfactoModel):
             ray_bundle = camera_ray_bundle.get_row_major_sliced_ray_bundle(start_idx, end_idx)
             ray_bundle.metadata["override_scales"] = best_scales
             outputs = self.forward(ray_bundle=ray_bundle)
-            # standard nerfstudio concatting
             for output_name, output in outputs.items():  # type: ignore
                 if output_name == "best_scales":
                     continue
@@ -197,6 +196,53 @@ class LERFModel(NerfactoModel):
             mask = (outputs["relevancy_0"] < 0.5).squeeze()
             outputs[f"composited_{i}"][mask, :] = outputs["rgb"][mask, :]
         return outputs
+
+    def render_composite(self, camera_ray_bundle: RayBundle):
+        num_rays_per_chunk = self.config.eval_num_rays_per_chunk
+        image_height, image_width = camera_ray_bundle.origins.shape[:2]
+        num_rays = len(camera_ray_bundle)
+        outputs_lists = defaultdict(list)  # dict from name:list of outputs (1 per bundle)
+        for i in range(0, num_rays, num_rays_per_chunk):
+            start_idx = i
+            end_idx = i + num_rays_per_chunk
+            ray_bundle = camera_ray_bundle.get_row_major_sliced_ray_bundle(start_idx, end_idx)
+            outputs = self.forward(ray_bundle=ray_bundle)
+            # take the best scale for each query across each ray bundle
+            if i == 0:
+                best_scales = outputs["best_scales"]
+                best_relevancies = [m.max() for m in outputs["raw_relevancy"]]
+            else:
+                for phrase_i in range(outputs["best_scales"].shape[0]):
+                    m = outputs["raw_relevancy"][phrase_i, ...].max()
+                    if m > best_relevancies[phrase_i]:
+                        best_scales[phrase_i] = outputs["best_scales"][phrase_i]
+                        best_relevancies[phrase_i] = m
+        # re-render the max_across outputs using the best scales across all batches
+        for i in range(0, num_rays, num_rays_per_chunk):
+            start_idx = i
+            end_idx = i + num_rays_per_chunk
+            ray_bundle = camera_ray_bundle.get_row_major_sliced_ray_bundle(start_idx, end_idx)
+            ray_bundle.metadata["override_scales"] = best_scales
+            outputs = self.forward(ray_bundle=ray_bundle)
+            for output_name, output in outputs.items():  # type: ignore
+                if output_name == "best_scales":
+                    continue
+                if output_name == "raw_relevancy":
+                    for r_id in range(output.shape[0]):
+                        outputs_lists[f"relevancy_{r_id}"].append(output[r_id, ...])
+                else:
+                    outputs_lists[output_name].append(output)
+        outputs = {}
+        for output_name, outputs_list in outputs_lists.items():
+            if not torch.is_tensor(outputs_list[0]):
+                continue
+            if output_name == "rgb" or output_name == "relevancy_0":
+                outputs[output_name] = torch.cat(outputs_list).view(image_height, image_width, -1)  # type: ignore
+        p_0 = torch.clip(outputs[f"relevancy_{0}"] - 0.5, 0, 1)
+        outputs[f"composited_{0}"] = apply_colormap(p_0 / (p_0.max() + 1e-6), ColormapOptions("turbo"))
+        mask = (outputs["relevancy_0"] < 0.5).squeeze()
+        outputs[f"composited_{0}"][mask, :] = outputs["rgb"][mask, :]
+        return outputs["composited_0"]
 
     def _get_outputs_nerfacto(self, ray_samples: RaySamples):
         field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
