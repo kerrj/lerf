@@ -13,7 +13,7 @@ from nerfstudio.model_components.ray_samplers import PDFSampler
 from nerfstudio.model_components.renderers import DepthRenderer
 from nerfstudio.models.nerfacto import NerfactoModel, NerfactoModelConfig
 from nerfstudio.utils.colormaps import ColormapOptions, apply_colormap
-from nerfstudio.viewer.server.viewer_elements import *
+from nerfstudio.viewer.viewer_elements import *
 from torch.nn import Parameter
 
 from lerf.encoders.image_encoder import BaseImageEncoder

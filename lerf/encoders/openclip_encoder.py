@@ -11,7 +11,7 @@ except ImportError:
 
 from lerf.encoders.image_encoder import (BaseImageEncoder,
                                          BaseImageEncoderConfig)
-from nerfstudio.viewer.server.viewer_elements import ViewerText
+from nerfstudio.viewer.viewer_elements import ViewerText
 
 
 @dataclass
