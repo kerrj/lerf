@@ -55,7 +55,7 @@ lerf_method = MethodSpecification(
                 "scheduler": None,
             },
             "fields": {
-                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=30000),
             },
             "lerf": {
@@ -105,7 +105,7 @@ lerf_method_big = MethodSpecification(
                 "scheduler": None,
             },
             "fields": {
-                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
                 "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=30000),
             },
             "lerf": {

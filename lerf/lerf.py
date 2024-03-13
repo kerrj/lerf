@@ -84,6 +84,8 @@ class LERFModel(NerfactoModel):
         return torch.stack(n_phrases_sims), torch.Tensor(n_phrases_maxs)
 
     def get_outputs(self, ray_bundle: RayBundle):
+        if self.training:
+            self.camera_optimizer.apply_to_raybundle(ray_bundle)
         ray_samples, weights_list, ray_samples_list = self.proposal_sampler(ray_bundle, density_fns=self.density_fns)
         ray_samples_list.append(ray_samples)
 
@@ -118,7 +120,6 @@ class LERFModel(NerfactoModel):
             outputs[f"prop_depth_{i}"] = self.renderer_depth(weights=weights_list[i], ray_samples=ray_samples_list[i])
 
         lerf_field_outputs = self.lerf_field.get_outputs(lerf_samples, clip_scales)
-
         outputs["clip"] = self.renderer_clip(
             embeds=lerf_field_outputs[LERFFieldHeadNames.CLIP], weights=lerf_weights.detach()
         )
