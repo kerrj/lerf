@@ -27,11 +27,11 @@ class LERFPipelineConfig(VanillaPipelineConfig):
 
     _target: Type = field(default_factory=lambda: LERFPipeline)
     """target class to instantiate"""
-    datamanager: LERFDataManagerConfig = LERFDataManagerConfig()
+    datamanager: LERFDataManagerConfig = field(default_factory=lambda: LERFDataManagerConfig())
     """specifies the datamanager config"""
-    model: ModelConfig = LERFModelConfig()
+    model: ModelConfig = field(default_factory=lambda: LERFModelConfig())
     """specifies the model config"""
-    network: BaseImageEncoderConfig = BaseImageEncoderConfig()
+    network: BaseImageEncoderConfig = field(default_factory=lambda: BaseImageEncoderConfig())
     """specifies the vision-language network config"""
 
 
